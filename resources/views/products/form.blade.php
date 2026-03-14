@@ -1,13 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
 
-</head>
-<body>  
-<x-layout>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center py-12">
     <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-10">
 
@@ -19,16 +10,14 @@
       @endif
 
       <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center">Add New Product</h2>
-
-     
-
-        <!-- Product Name -->
+      <!-- Product Name -->
         <div>
           <label class="block mb-2 font-semibold text-gray-700">Product Name</label>
           <input type="text" name="name" value="{{ old('name') }}"
             class="w-full px-5 py-3 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200">
           @error('name')
-            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+          span class="text-red-500 text-sm mt-1">{{ $message }}</span>
+         
           @enderror
         </div>
 
@@ -38,7 +27,8 @@
           <input type="number" name="price" value="{{ old('price') }}"
             class="w-full px-5 py-3 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 transition duration-200">
           @error('price')
-            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+          span class="text-red-500 text-sm mt-1">{{ $message }}</span>
+         
           @enderror
         </div>
 
@@ -47,8 +37,9 @@
           <label class="block mb-2 font-semibold text-gray-700">Quantity</label>
           <input type="number" name="qty" value="{{ old('qty') }}"
             class="w-full px-5 py-3 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400 transition duration-200">
-          @error('qty')
-            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+           @error('qty')
+          span class="text-red-500 text-sm mt-1">{{ $message }}</span>
+         
           @enderror
         </div>
 
@@ -57,8 +48,9 @@
           <label class="block mb-2 font-semibold text-gray-700">Product Image</label>
           <input type="file" name="image"
             class="w-full px-5 py-3 border border-gray-300 rounded-2xl bg-gray-50 hover:bg-gray-100 transition duration-200 cursor-pointer">
-          @error('image')
-            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+           @error('image')
+          span class="text-red-500 text-sm mt-1">{{ $message }}</span>
+         
           @enderror
         </div>
 
@@ -69,9 +61,5 @@
             Add Product
           </button>
         </div>
-   
     </div>
   </div>
-</x-layout>
-</body>
-</html>
