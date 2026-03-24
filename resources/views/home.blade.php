@@ -18,9 +18,8 @@ style="text-decoration: none"
     <li><a href="#" class="hover:text-blue-400"
 style="text-decoration: none"
         >Contact</a></li>
-    <li><a href="#" class="hover:text-blue-400"
-style="text-decoration: none"
-        >Login</a></li>
+<li><a href="{{ route('register') }}" class="hover:text-blue-400" style="text-decoration: none">register</a></li>
+<li><a href="{{ route('login') }}" class="hover:text-blue-400" style="text-decoration: none">Login</a></li>
 </ul>
   <!-- Search -->
          <form action="{{ route('home') }}" method="GET" class="flex gap-2">
@@ -47,11 +46,6 @@ style="text-decoration: none"
             @include('partials.products', ['products' => $products])
         </div>
     </section>
-
-    <!-- Pagination -->
-    <div class="mt-6 flex justify-center">
-        {{ $products->links('pagination::tailwind') }}
-    </div>
 
     <!-- Live Search Script -->
     <script>
