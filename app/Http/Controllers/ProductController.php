@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
 
+
+namespace App\Http\Controllers;
+use App\Http\Controllers\API\AuthController;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use Exception;
 
-class ProductController extends Controller
+class ProductController extends AuthController
 {
     // Home Page / Frontend (optional)
     public function home(Request $request)
@@ -63,7 +65,7 @@ class ProductController extends Controller
                 'name' => 'required',
                 'price' => 'required|numeric|min:0',
                 'qty' => 'required|integer|min:0',
-                'image' => 'required|image|max:2048',
+                'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
             $data = $request->all();
@@ -82,44 +84,42 @@ class ProductController extends Controller
         }
     }
 
-    // Show Edit Form
-    public function edit(Product $product)
-    {
-        return view('products.edit', compact('product'));
-    }
+   // Show Edit Form
+public function edit(Product $product)
+{
+    return view('products.edit', compact('product'));
+}
 
-    // Update Product
-    public function update(Request $request, Product $product)
-    {
-        try {
-            $request->validate([
-                'name' => 'required',
-                'price' => 'required|numeric|min:0',
-                'qty' => 'required|integer|min:0',
-                'image' => 'nullable|image|max:2048',
-            ]);
+  public function update(Request $request, Product $product)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'price' => 'required|numeric|min:0',
+        'qty' => 'required|integer|min:0',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-            $data = $request->all();
+    // Update basic fields
+    $product->name = $request->name;
+    $product->price = $request->price;
+    $product->qty = $request->qty;
 
-            if ($request->hasFile('image')) {
-                // Delete old image
-                if ($product->image) {
-                    Storage::disk('public')->delete($product->image);
-                }
-
-                // Store new image
-                $data['image'] = $request->file('image')->store('uploads', 'public');
-            }
-
-            $product->update($data);
-
-            return redirect()->route('product.index')
-                             ->with('success', 'Product updated successfully');
-        } catch (Exception $e) {
-            return back()->with('error', 'Failed to update product.');
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        // Delete old image if exists
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
         }
+
+        // Store new image in 'storage/app/public/uploads'
+        $product->image = $request->file('image')->store('uploads', 'public');
     }
 
+    $product->save();
+
+    return redirect()->route('product.index')
+                     ->with('success', 'Product updated successfully');
+}
     // Delete Product
     public function destroy(Product $product)
     {

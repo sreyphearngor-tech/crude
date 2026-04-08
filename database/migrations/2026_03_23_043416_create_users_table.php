@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['admin','client'])->default('client');
+            $table->string('role')->default('user'); // Add a role column with a default value
             $table->timestamps();
         });
     }

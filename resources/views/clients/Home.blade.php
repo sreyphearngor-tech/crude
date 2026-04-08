@@ -9,10 +9,7 @@
 <div class="container mt-5">
 <h2>Welcome Client</h2>
 
-<form action="{{ route('logout') }}" method="POST">
-    @csrf
-    <button type="submit" class="btn btn-danger">Logout</button>
-</form>
+
 
 {{-- <form action="{{ route('logout') }}" method="POST">
     @csrf

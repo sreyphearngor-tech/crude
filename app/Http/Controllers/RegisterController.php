@@ -4,12 +4,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\API\AuthController;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
-class RegisterController extends Controller
+class RegisterController extends AuthController
 {
     // Register
     public function registerForm()
