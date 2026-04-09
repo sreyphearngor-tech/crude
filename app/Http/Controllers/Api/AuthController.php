@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -11,39 +10,39 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
-    //
+    /**
+     * Register a new user
+     */
     public function register(Request $request)
     {
-        // Handle user registration logic here
         try {
-            // Use Validator to validate request input
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:20',
+                'name' => 'required|string|max:50',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|string|min:6',
-                'role' => 'nullable',
+                'password' => 'required|string|min:6', // password_confirmation required
+                'role' => 'required|in:user,admin',
             ]);
 
-            if ($validator->fails()) {// If validation fails, return a JSON response with errors
+            if ($validator->fails()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Error validating input',
+                    'message' => 'Validation errors',
                     'errors' => $validator->errors()
                 ], 422);
             }
-
-            // Create user (hash the password!)
+            // Create user
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),//Hashមានន័យសម្រាប់បង្កើតពាក្យសម្ងាត់ដែលបានបំលែងទៅជាអក្សរដែលមិនអាចអានបាន
+                'password' => Hash::make($request->password),
                 'role' => $request->role,
             ]);
+
             $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
                 'status' => true,
                 'message' => 'Registered successfully',
-
                 'data' => [
                     'user' => $user,
                     'token' => $token,
@@ -57,44 +56,48 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Login user and create token
+     */
     public function login(Request $request)
-{
-//បញ្ចូលការផ្ទៀងផ្ទាត់នៃការបញ្ចូលទិន្នន័យពីអ្នកប្រើប្រាស់
+    {
         $validator = Validator::make($request->all(), [
-        'email' => 'required|email',
-        'password' => 'required|string|min:6',
-    ]);
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
 
-    if ($validator->fails()) {
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        $user = Auth::user();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
-            'status' => false,
-            'message' => $validator->errors()
-        ], 422);
+            'status' => true,
+            'message' => 'Login successful',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+                'role' => $user->role,
+            ]
+        ], 200);
     }
 
-    // 2️⃣ Attempt login
-    if (!Auth::attempt($request->only('email', 'password'))) {//ពន្យល់បន្ទាត់នេះគឺសម្រាប់ពិនិត្យមើលថាតើការបញ្ចូលអ៊ីមែល និងពាក្យសម្ងាត់ត្រឹមត្រូវឬអត់។ ប្រសិនបើមិនត្រឹមត្រូវទេ វានឹងត្រឡប់ទៅនូវការឆ្លើយតប JSON ដែលមានស្ថានភាព false និងសារ "Invalid credentials" ជាមួយនឹងកូដ HTTP 401 (Unauthorized)។
-        return response()->json([
-            'status' => false,
-            'message' => 'Invalid credentials'
-        ], 401);
-    }
+    /**
+     * Logout user (delete tokens)
+     */
 
-    // 3️⃣ Get authenticated user
-    $user = Auth::user();
-
-    // 4️⃣ Create token
-    $token = $user()->createToken('auth_token')->plainTextToken;
-
-    // 5️⃣ Return response
-    return response()->json([
-        'status' => true,
-        'message' => 'Login successful',
-        'data' => [
-            'user' => $user,
-            'token' => $token,
-            'role' => $user->role,
-        ]
-    ], 200);
-}
 }
