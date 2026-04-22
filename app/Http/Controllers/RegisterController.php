@@ -64,7 +64,7 @@ if (Auth::attempt($credentials)) {
     return redirect()->route('client.home');
 }
 
-    return redirect()->route('loginForm')->with('error', 'Invalid email or password');
+    return redirect()->route('login')->with('error', 'Invalid email or password');
 }
 public function logout(Request $request)
 {

@@ -15,11 +15,13 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        try {
-            $validator = Validator::make($request->all(), [
+        try {//អត់យល់ជួយពន្យល់បន្តិចបានទេកូដនេះគឺជា Controller សម្រាប់ Authentication នៅក្នុង Laravel API។ វាមានមុខងារ ៣ គឺ register, login និង logout។
+
+
+            $validator = Validator::make($request->all(), [//វាប្រើ Validator ដើម្បី validate ទិន្នន័យដែលបានផ្ញើមកពី client មុនពេលបង្កើត user ថាតើមានការបញ្ចូលត្រឹមត្រូវឬអត់។ វាកំណត់ថា name ត្រូវតែមាន និងមានអក្សរតិចជាង 50, email ត្រូវតែមាន និងមានទ្រង់ទ្រាយ email, password ត្រូវតែមាន និងមានអក្សរតិចជាង 6 និងត្រូវតែបញ្ជាក់ password_confirmation, role ត្រូវតែមាន និងត្រូវតែជា user ឬ admin។
                 'name' => 'required|string|max:50',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|string|min:6', // password_confirmation required
+                'password' => 'required|string|min:6|confirmed', // password_confirmation required
                 'role' => 'required|in:user,admin',
             ]);
 
@@ -30,11 +32,12 @@ class AuthController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
+
             // Create user
-            $user = User::create([
+            $user = User::create([//បង្កើត user ថ្មីដោយប្រើ Model User និង hash password មុនពេលរក្សាទុកទៅ database។
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'password' => Hash::make($request->password),//hash​​ចេញទម្រង់បែបបំលែងទៅជា​string ដែលមានសុវត្ថិភាពសម្រាប់រក្សាទុកនៅក្នុង database។
                 'role' => $request->role,
             ]);
 
@@ -49,7 +52,7 @@ class AuthController extends Controller
                     'role' => $user->role,
                 ]
             ], 201);
-        } catch (Exception $e) {
+        } catch (Exception $e) {//ប្រសិនបើមានកំហុសណាមួយកើតឡើងក្នុងដំណើរការនេះ វានឹងចាប់យក Exception ហើយផ្ញើត្រឡប់ទៅ client ជាមួយនឹងស្ថានភាព false និងសារ error ដែលបានចាប់យក។
             return response()->json([
                 'status' => false,
                 'message' => 'Error: ' . $e->getMessage()
@@ -62,7 +65,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [//អត់យល់ជួយពន្យល់បន្តិចបានទេកូដនេះគឺជា function login ដែលទទួល Request ពី client ហើយវាប្រើ Validator ដើម្បី validate ទិន្នន័យដែលបានផ្ញើមកពី client មុនពេលព្យាយាម login។ វាកំណត់ថា email ត្រូវតែមាន និងមានទ្រង់ទ្រាយ email, password ត្រូវតែមាន និងមានអក្សរតិចជាង 6។
             'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
@@ -83,7 +86,7 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user()->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'status' => true,
@@ -99,5 +102,14 @@ class AuthController extends Controller
     /**
      * Logout user (delete tokens)
      */
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        $user->tokens()->delete();
 
+        return response()->json([
+            'status' => true,
+            'message' => 'Logged out successfully'
+        ], 200);
+    }
 }

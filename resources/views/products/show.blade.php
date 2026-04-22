@@ -39,15 +39,11 @@
             <!-- Buttons -->
             <div class="flex gap-3 pt-6">
 
-                <a href="{{ route('product.index') }}"
+                <a href="{{ route('product.home') }}"
                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
                     Back
                 </a>
 
-                <a href="{{ route('product.edit',$product->id) }}"
-                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                    Edit
-                </a>
 
                 <form action="{{ route('product.destroy',$product->id) }}" method="POST" class="flex-1">
                     @csrf

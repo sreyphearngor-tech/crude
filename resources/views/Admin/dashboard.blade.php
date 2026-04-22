@@ -93,7 +93,6 @@
                     </tbody>
                 </table>
 
-                <!-- Pagination -->
                 <div class="mt-6 flex justify-center">
                     {{ $products->links('pagination::tailwind') }}
                 </div>

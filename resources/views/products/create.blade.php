@@ -23,14 +23,9 @@
     <!-- Main Content -->
     <div class="flex-1 p-6">
 
-        <!-- Top Navbar -->
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-bold text-gray-800">Add Product</h2>
-
-        </div>
 
         <!-- Form Card -->
-        <div class="bg-white shadow-2xl rounded-2xl p-6 max-w-3xl">
+
           <form action="{{ route('product.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 

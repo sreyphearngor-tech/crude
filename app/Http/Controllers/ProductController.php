@@ -8,7 +8,9 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use Exception;
-
+use App\Models\Cart;
+use App\Models\CartItem;
+use Illuminate\Support\Facades\Auth;
 class ProductController extends AuthController
 {
     // Home Page / Frontend (optional)
@@ -147,5 +149,43 @@ public function dashboard()
     $products = Product::latest()->paginate(5);
 
     return view('admin.dashboard', compact('products'));
+}
+
+// Show specific product detail
+public function show2($id)
+    {
+        // Find the product or return a 404 error if it doesn't exist
+        $product = Product::findOrFail($id);
+
+        // Pass the product data to your detail blade file
+        return view('products.show2', compact('product'));
+    }
+public function add(Request $request)
+{
+    // 1. Ensure the user is logged in
+    if (!Auth::check()) {
+        return redirect()->route('login')->with('error', 'Please login first!');
+    }
+
+    $user = Auth::user();
+
+    // 2. Get the user's cart or create one if they don't have it
+    $cart = $user->cart ?: $user->cart()->create();
+
+    // 3. Find if the product is already in the cart
+    $cartItem = $cart->items()->where('product_id', $request->product_id)->first();
+
+    if ($cartItem) {
+        // Increment quantity if it exists
+        $cartItem->increment('quantity');
+    } else {
+        // Create new item if it doesn't
+        $cart->items()->create([
+            'product_id' => $request->product_id,
+            'quantity' => 1
+        ]);
+    }
+
+    return back()->with('success', 'Product added to cart!');
 }
 }
