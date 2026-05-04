@@ -1,191 +1,183 @@
 <?php
 
-
-
 namespace App\Http\Controllers;
-use App\Http\Controllers\API\AuthController;
-use Illuminate\Http\Request;
+
+use App\Http\Controllers\Api\AuthController;
 use App\Models\Product;
+use App\Models\Category;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Exception;
-use App\Models\Cart;
-use App\Models\CartItem;
-use Illuminate\Support\Facades\Auth;
+
 class ProductController extends AuthController
 {
-    // Home Page / Frontend (optional)
-    public function home(Request $request)
+    // --- ផ្នែកសម្រាប់ ADMIN ---
+
+    public function index(Request $request)
     {
-        $query = Product::query();
+        $query = Product::query()->with('category');
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $products = $query->orderBy('id', 'desc')->paginate(12);
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        $products   = $query->latest()->paginate(10);
+        $categories = Category::all();
 
         if ($request->ajax()) {
-            return view('partials.products', compact('products'))->render();
+            return view('admin.products.table', compact('products'))->render();
         }
 
-        return view('home', compact('products'));
+        return view('admin.product.index', compact('products', 'categories'));
     }
-
-    // Show Products + Search
-    public function index(Request $request)
-    {
-        try {
-            $query = Product::query();
-
-            if ($request->filled('search')) {
-                $query->where('name', 'like', '%' . $request->search . '%');
-            }
-
-            $products = $query->orderBy('id', 'desc')->paginate(5);
-
-            if ($request->ajax()) {
-                return view('products.table', compact('products'))->render();
-            }
-
-            return view('products.index', compact('products'));
-        } catch (Exception $e) {
-            return back()->with('error', 'Something went wrong.');
-        }
-    }
-
-    // Show Create Form
+// Method សម្រាប់បង្ហាញ Form បញ្ចូលផលិតផល
     public function create()
     {
-        return view('products.create');
+        $categories = Category::all(); // ទាញយកប្រភេទដើម្បីឱ្យ User រើសក្នុង Form
+        return view('admin.product.create', compact('categories'));
     }
 
-    // Store Product
+
     public function store(Request $request)
     {
-        try {
-            $request->validate([
-                'name' => 'required',
-                'price' => 'required|numeric|min:0',
-                'qty' => 'required|integer|min:0',
-                'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            ]);
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'category_id' => 'required|exists:categories,id',
+            'price'       => 'required|numeric|min:0',
+            'qty'         => 'required|integer|min:0',
+            'description' => 'nullable|string',
+            'image'       => 'nullable|image|max:2048',
+            'image2'      => 'nullable|image|max:2048',
+            'image3'      => 'nullable|image|max:2048',
+            'image4'      => 'nullable|image|max:2048',
+        ]);
 
-            $data = $request->all();
-
-            if ($request->hasFile('image')) {
-                // Save image to storage/app/public/uploads
-                $data['image'] = $request->file('image')->store('uploads', 'public');
+        foreach (['image', 'image2', 'image3', 'image4'] as $field) {
+            if ($request->hasFile($field)) {
+                $validated[$field] = $request->file($field)->store('products', 'public');
             }
-
-            Product::create($data);
-
-            return redirect()->route('product.index')
-                             ->with('success', 'Product created successfully');
-        } catch (Exception $e) {
-            return back()->with('error', 'Failed to create product.');
         }
+
+        Product::create($validated);
+        return redirect()->route('admin.product.index')->with('success', 'Product saved successfully!');
     }
 
-   // Show Edit Form
-public function edit(Product $product)
+    // --- ផ្នែកសម្រាប់ FRONTEND (USER) ---
+
+    public function home()
+    {
+        $categories = Category::take(8)->get(); // សម្រាប់ Sidebar
+        $products = Product::latest()->take(8)->get(); // សម្រាប់ Flash Sales
+        $bestSellingProducts = Product::latest()->take(4)->get(); // សម្រាប់ Best Selling
+
+        return view('home', compact('products', 'categories', 'bestSellingProducts'));
+    }
+
+    public function show($id)
+    {
+        $product = Product::findOrFail($id);
+        // ទាញយកផលិតផលពាក់ព័ន្ធ
+        $relatedProducts = Product::where('category_id', $product->category_id)
+                                    ->where('id', '!=', $id)
+                                    ->take(4)->get();
+
+        return view('product_detail', compact('product', 'relatedProducts'));
+    }
+
+
+// app/Http/Controllers/ProductController.php
+
+// app/Http/Controllers/ProductController.php
+
+public function getByCategory($categoryId)
 {
-    return view('products.edit', compact('product'));
+    $categories = Category::all();
+    $products = Product::where('category_id', $categoryId)->latest()->paginate(12);
+
+    // បន្ថែមបន្ទាត់នេះ ដើម្បីឱ្យទំព័រ Home ស្គាល់ Variable ពេល Select Category
+    $bestSellingProducts = Product::latest()->take(4)->get();
+
+    return view('home', compact('products', 'categories', 'bestSellingProducts'));
 }
 
-  public function update(Request $request, Product $product)
+
+// app/Http/Controllers/ProductController.php
+
+public function search(Request $request)
 {
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'price' => 'required|numeric|min:0',
-        'qty' => 'required|integer|min:0',
-        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    $query = $request->input('query');
+    $categories = Category::all();
+
+    // ស្វែងរកផលិតផលតាមឈ្មោះផលិតផល ឬ តាមឈ្មោះ Category
+    $products = Product::where('name', 'LIKE', "%{$query}%")
+        ->orWhereHas('category', function($q) use ($query) {
+            $q->where('name', 'LIKE', "%{$query}%");
+        })
+        ->latest()
+        ->get();
+
+    // បោះទិន្នន័យចាំបាច់ទៅឱ្យ home.blade.php
+    $bestSellingProducts = Product::latest()->take(4)->get();
+
+    return view('home', compact('products', 'categories', 'query', 'bestSellingProducts'));
+}
+// 1. Method សម្រាប់បង្ហាញ Form កែប្រែ (Edit Form)
+public function edit($id)
+{
+    $product = Product::findOrFail($id);
+    $categories = Category::all();
+    return view('admin.product.edit', compact('product', 'categories'));
+}
+
+// 2. Method សម្រាប់ Update ទិន្នន័យចូល Database
+public function update(Request $request, $id)
+{
+    $product = Product::findOrFail($id);
+
+    $validated = $request->validate([
+        'name'        => 'required|string|max:255',
+        'category_id' => 'required|exists:categories,id',
+        'price'       => 'required|numeric|min:0',
+        'qty'         => 'required|integer|min:0',
+        'description' => 'nullable|string',
+        'image'       => 'nullable|image|max:2048',
+        'image2'      => 'nullable|image|max:2048',
+        'image3'      => 'nullable|image|max:2048',
+        'image4'      => 'nullable|image|max:2048',
     ]);
 
-    // Update basic fields
-    $product->name = $request->name;
-    $product->price = $request->price;
-    $product->qty = $request->qty;
-
-    // Handle image upload
-    if ($request->hasFile('image')) {
-        // Delete old image if exists
-        if ($product->image && Storage::disk('public')->exists($product->image)) {
-            Storage::disk('public')->delete($product->image);
-        }
-
-        // Store new image in 'storage/app/public/uploads'
-        $product->image = $request->file('image')->store('uploads', 'public');
-    }
-
-    $product->save();
-
-    return redirect()->route('product.index')
-                     ->with('success', 'Product updated successfully');
-}
-    // Delete Product
-    public function destroy(Product $product)
-    {
-        try {
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+    // កូដសម្រាប់ Update រូបភាព (បើមាន Upload ថ្មី មកជំនួសអាចាស់)
+    foreach (['image', 'image2', 'image3', 'image4'] as $field) {
+        if ($request->hasFile($field)) {
+            // លុបរូបចាស់ចោលដើម្បីកុំឱ្យធ្ងន់ Server (Optional)
+            if ($product->$field) {
+                Storage::disk('public')->delete($product->$field);
             }
-
-            $product->delete();
-
-            return redirect()->route('product.index')
-                             ->with('success', 'Product deleted successfully');
-        } catch (Exception $e) {
-            return back()->with('error', 'Failed to delete product.');
+            $validated[$field] = $request->file($field)->store('products', 'public');
         }
     }
 
-    // Show Product Detail
-    public function show(Product $product)
-    {
-        return view('products.show', compact('product'));
-    }
-public function dashboard()
-{
-    $products = Product::latest()->paginate(5);
+    $product->update($validated);
 
-    return view('admin.dashboard', compact('products'));
+    return redirect()->route('admin.product.index')->with('success', 'Product updated successfully!');
 }
 
-// Show specific product detail
-public function show2($id)
-    {
-        // Find the product or return a 404 error if it doesn't exist
-        $product = Product::findOrFail($id);
-
-        // Pass the product data to your detail blade file
-        return view('products.show2', compact('product'));
-    }
-public function add(Request $request)
+// 3. Method សម្រាប់លុបផលិតផល (Destroy)
+public function destroy($id)
 {
-    // 1. Ensure the user is logged in
-    if (!Auth::check()) {
-        return redirect()->route('login')->with('error', 'Please login first!');
+    $product = Product::findOrFail($id);
+
+    // លុបរូបភាពចេញពី Storage
+    foreach (['image', 'image2', 'image3', 'image4'] as $field) {
+        if ($product->$field) {
+            Storage::disk('public')->delete($product->$field);
+        }
     }
 
-    $user = Auth::user();
-
-    // 2. Get the user's cart or create one if they don't have it
-    $cart = $user->cart ?: $user->cart()->create();
-
-    // 3. Find if the product is already in the cart
-    $cartItem = $cart->items()->where('product_id', $request->product_id)->first();
-
-    if ($cartItem) {
-        // Increment quantity if it exists
-        $cartItem->increment('quantity');
-    } else {
-        // Create new item if it doesn't
-        $cart->items()->create([
-            'product_id' => $request->product_id,
-            'quantity' => 1
-        ]);
-    }
-
-    return back()->with('success', 'Product added to cart!');
+    $product->delete();
+    return redirect()->route('admin.product.index')->with('success', 'Product deleted successfully!');
 }
 }

@@ -1,141 +1,363 @@
+{{-- resources/views/admin/dashboard.blade.php --}}
 <x-layout>
-<div class="flex min-h-screen bg-gray-50">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-lg p-6 flex flex-col text-gray-700">
-        <h1 class="text-2xl font-bold text-gray-800 mb-10">eProduct Admin</h1>
-        <nav class="flex-1 flex flex-col gap-4">
-            <a href="{{ route('admin.dashboard') }}"
-               class="px-4 py-2 rounded-lg hover:bg-blue-100 font-medium {{ request()->routeIs('admin.dashboard') ? 'bg-blue-100 font-semibold text-blue-600' : '' }}">
-                Dashboard
-            </a>
-            <a href="{{ route('product.index') }}"
-               class="px-4 py-2 rounded-lg hover:bg-blue-100 font-medium {{ request()->routeIs('product.*') ? 'bg-blue-100 font-semibold text-blue-600' : '' }}">
-                Products
-            </a>
-            <a href="#" class="px-4 py-2 rounded-lg hover:bg-blue-100 font-medium">Orders</a>
-            <a href="#" class="px-4 py-2 rounded-lg hover:bg-blue-100 font-medium">Settings</a>
-        </nav>
-    </aside>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap');
 
-    <!-- Main Content -->
-    <div class="flex-1 p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-bold text-gray-800">Dashboard</h2>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body, .dash-wrap { font-family: 'Geist', sans-serif; background: #f8f8fb; color: #1a1a2e; }
+
+    .dash-wrap { display: flex; min-height: 100vh; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+        width: 220px; min-height: 100vh; background: #7c3aed;
+        border-right: none; display: flex; flex-direction: column;
+        position: sticky; top: 0; height: 100vh; padding: 20px 0; flex-shrink: 0;
+    }
+    .sidebar-logo {
+        display: flex; align-items: center; gap: 10px;
+        padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+    .sidebar-logo .logo-icon {
+        width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .sidebar-logo .logo-icon svg { width: 16px; height: 16px; stroke: #fff; }
+    .sidebar-logo span { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: -0.3px; }
+    .sidebar-logo span em { font-style: normal; color: #c4b5fd; font-weight: 400; }
+
+    .sidebar-section { padding: 16px 12px 4px; }
+    .sidebar-section-label {
+        font-size: 11px; font-weight: 500; color: #c4b5fd;
+        letter-spacing: 0.6px; text-transform: uppercase; padding: 0 8px; margin-bottom: 6px;
+    }
+    .sidebar-link {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 10px; border-radius: 8px; text-decoration: none;
+        color: #ddd6fe; font-size: 13.5px; font-weight: 400; transition: all 0.15s;
+        width: 100%; border: none; background: none; cursor: pointer; font-family: 'Geist', sans-serif;
+    }
+    .sidebar-link svg { width: 16px; height: 16px; flex-shrink: 0; stroke: #ddd6fe; }
+    .sidebar-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .sidebar-link:hover svg { stroke: #fff; }
+    .sidebar-link.active { background: rgba(255,255,255,0.2); color: #fff; font-weight: 500; }
+    .sidebar-link.active svg { stroke: #fff; }
+
+    .sidebar-footer {
+        margin-top: auto; padding: 16px 12px 0;
+        border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    .user-row {
+        display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
+    }
+    .user-avatar {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0;
+    }
+    .user-name { font-size: 13px; font-weight: 500; color: #fff; }
+    .user-role { font-size: 11px; color: #c4b5fd; }
+
+    /* ===== MAIN ===== */
+    .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .top-bar {
+        background: #fff; border-bottom: 1px solid #efefef;
+        padding: 12px 28px; display: flex; justify-content: space-between;
+        align-items: center; position: sticky; top: 0; z-index: 10;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 8px; }
+    .top-bar-left span { font-size: 13px; color: #a0a0b0; }
+    .top-bar-left strong { font-size: 13px; font-weight: 500; color: #1a1a2e; }
+    .top-bar-right { display: flex; align-items: center; gap: 12px; }
+
+    .search-bar {
+        display: flex; align-items: center; gap: 8px;
+        background: #f5f5fa; border: 1px solid #efefef; border-radius: 8px;
+        padding: 6px 12px; min-width: 200px;
+    }
+    .search-bar svg { width: 14px; height: 14px; stroke: #a0a0b0; flex-shrink: 0; }
+    .search-bar input {
+        background: none; border: none; outline: none; font-size: 13px;
+        color: #1a1a2e; font-family: 'Geist', sans-serif; width: 100%;
+    }
+    .search-bar input::placeholder { color: #b0b0c0; }
+
+    .icon-btn {
+        width: 34px; height: 34px; border-radius: 8px; background: #f5f5fa;
+        border: 1px solid #efefef; display: flex; align-items: center;
+        justify-content: center; cursor: pointer; transition: background 0.15s;
+    }
+    .icon-btn svg { width: 15px; height: 15px; stroke: #6b6b80; }
+    .icon-btn:hover { background: #efefef; }
+
+    .top-avatar {
+        width: 34px; height: 34px; border-radius: 50%; background: #ede9fe;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 600; color: #7c3aed;
+    }
+
+    .content { padding: 28px; flex: 1; }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 600; color: #1a1a2e; letter-spacing: -0.4px; }
+    .page-sub { font-size: 13px; color: #a0a0b0; margin-top: 3px; }
+    .date-badge {
+        font-size: 12px; color: #6b6b80; background: #fff; border: 1px solid #efefef;
+        padding: 6px 14px; border-radius: 8px; font-weight: 500;
+    }
+
+    /* ===== STAT CARDS ===== */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+        background: #fff; border: 1px solid #efefef; border-radius: 14px;
+        padding: 20px 22px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .stat-card-top { display: flex; justify-content: space-between; align-items: center; }
+    .stat-label { font-size: 12px; font-weight: 500; color: #a0a0b0; text-transform: uppercase; letter-spacing: 0.4px; }
+    .stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .stat-icon svg { width: 16px; height: 16px; }
+    .stat-icon.blue { background: #ede9fe; }
+    .stat-icon.blue svg { stroke: #7c3aed; }
+    .stat-icon.green { background: #f0fdf4; }
+    .stat-icon.green svg { stroke: #16a34a; }
+    .stat-icon.red { background: #fef2f2; }
+    .stat-icon.red svg { stroke: #dc2626; }
+    .stat-value { font-size: 28px; font-weight: 600; color: #1a1a2e; letter-spacing: -0.8px; line-height: 1; }
+
+    /* ===== TOOLBAR ===== */
+    .toolbar {
+        background: #fff; border: 1px solid #efefef; border-radius: 14px;
+        padding: 16px 20px; display: flex; align-items: center;
+        justify-content: space-between; gap: 12px; margin-bottom: 20px;
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+    .tb-input-wrap { position: relative; flex: 1; max-width: 280px; }
+    .tb-input-wrap svg {
+        position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+        width: 14px; height: 14px; stroke: #b0b0c0;
+    }
+    .tb-input {
+        width: 100%; padding: 8px 12px 8px 34px; background: #f8f8fb;
+        border: 1px solid #efefef; border-radius: 8px; font-size: 13px;
+        color: #1a1a2e; font-family: 'Geist', sans-serif; outline: none; transition: border 0.15s;
+    }
+    .tb-input:focus { border-color: #c4b5fd; background: #fff; }
+    .tb-select {
+        padding: 8px 14px; background: #f8f8fb; border: 1px solid #efefef;
+        border-radius: 8px; font-size: 13px; color: #6b6b80;
+        font-family: 'Geist', sans-serif; outline: none; cursor: pointer; transition: border 0.15s;
+    }
+    .tb-select:focus { border-color: #c4b5fd; background: #fff; }
+    .btn-add {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: #7c3aed; color: #fff; padding: 8px 18px;
+        border-radius: 8px; font-size: 13px; font-weight: 500;
+        text-decoration: none; transition: background 0.15s; white-space: nowrap;
+        font-family: 'Geist', sans-serif;
+    }
+    .btn-add svg { width: 14px; height: 14px; stroke: #fff; }
+    .btn-add:hover { background: #6d28d9; }
+
+    /* ===== TABLE ===== */
+    #product-data-container { transition: opacity 0.2s; }
+    #product-data-container.loading { opacity: 0.4; pointer-events: none; }
+</style>
+
+<div class="dash-wrap">
+
+    {{-- SIDEBAR --}}
+    <aside class="sidebar" id="mainSidebar">
+        <div class="sidebar-logo">
+            <div class="logo-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+            </div>
+            <span>eShop <em>Admin</em></span>
         </div>
 
-        <div class="bg-white shadow-2xl rounded-2xl p-6">
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Favorites</div>
+            <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Overview
+            </a>
+        </div>
 
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-800">Product List</h3>
-                <a href="{{ route('product.create') }}"
-                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-                   + Add Product
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Manage</div>
+            <a href="{{ route('admin.product.index') }}" id="productLink"
+               class="sidebar-link {{ request()->routeIs('admin.product.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                Products
+            </a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Manage</div>
+            <a href="{{ route('admin.product.index') }}" id="productLink"
+               class="sidebar-link {{ request()->routeIs('admin.product.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+             Categories
+            </a>
+        </div>
+ <!-- កែមកប្រើ admin.users.index វិញឱ្យត្រូវតាម Resource Route -->
+<a href="{{ route('admin.users.index') }}" id="productLink"
+   class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+    </svg>
+    Users
+</a>
+
+        <div class="sidebar-footer">
+            <div class="user-row">
+                <div class="user-avatar">{{ substr(Auth::user()->name ?? 'A', 0, 1) }}</div>
+                <div>
+                    <div class="user-name">{{ Auth::user()->name ?? 'Admin' }}</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+            </div>
+            <form action="{{ route('logout') }}" method="POST" style="margin-top: 6px;">
+                @csrf
+                <button type="submit" class="sidebar-link" style="color:#fca5a5;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="stroke:#fca5a5;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Logout
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    {{-- MAIN --}}
+    <div class="main-area">
+
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <svg style="width:16px;height:16px;stroke:#b0b0c0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <span>Dashboards</span>
+                <span style="color:#d0d0e0;">/</span>
+                <strong>Overview</strong>
+            </div>
+            <div class="top-bar-right">
+                <div class="search-bar">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" placeholder="Search...">
+                </div>
+                <div class="icon-btn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                </div>
+                <div class="top-avatar">{{ substr(Auth::user()->name ?? 'A', 0, 1) }}</div>
+            </div>
+        </header>
+
+        <div class="content">
+
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Dashboard Overview</div>
+                    <div class="page-sub">Manage your inventory and store performance.</div>
+                </div>
+                <div class="date-badge">{{ now()->format('D, d M Y') }}</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <div class="stat-label">Total Products</div>
+                        <div class="stat-icon blue">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ number_format($totalProducts) }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <div class="stat-label">Customers</div>
+                        <div class="stat-icon green">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ number_format($totalUsers) }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <div class="stat-label">Out of Stock</div>
+                        <div class="stat-icon red">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-value">{{ $outOfStock }}</div>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="tb-input-wrap">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" id="searchProduct" class="tb-input" placeholder="Search product...">
+                    </div>
+                    <select id="filterCategory" class="tb-select">
+                        <option value="">All Categories</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <a href="{{ route('admin.product.create') }}" class="btn-add">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Product
                 </a>
             </div>
 
-            <!-- Search -->
-            <form action="{{ route('product.index') }}" method="GET" class="flex gap-2 mb-4">
-                <input type="text" name="search" placeholder="Search product"
-                       value="{{ request('search') }}"
-                       class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                    Search
-                </button>
-            </form>
-
-            <!-- Product Table -->
-            <div class="overflow-x-auto" id="productGrid">
-                @if($products->count() > 0)
-                <table class="w-full border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-gray-100 text-gray-700 uppercase">
-                            <th class="p-3 text-left">ID</th>
-                            <th class="p-3 text-left">Name</th>
-                            <th class="p-3 text-left">Price</th>
-                            <th class="p-3 text-left">Quantity</th>
-                            <th class="p-3 text-left">Image</th>
-                            <th class="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @foreach ($products as $product)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="p-3 font-medium text-gray-800">{{ $product->id }}</td>
-                            <td class="p-3 font-medium text-gray-800">{{ $product->name }}</td>
-                            <td class="p-3 text-green-600 font-semibold">${{ $product->price }}</td>
-                            <td class="p-3">
-                                <span class="text-blue-700 px-3 py-1 text-sm font-medium">{{ $product->qty }}</span>
-                            </td>
-                            <td class="p-3">
-                                @if($product->image)
-                                    <img src="{{ asset('storage/'.$product->image) }}" class="w-24 h-24 object-cover rounded-lg shadow"  alt="{{ $product->name }}">
-                                @else
-                                    <span class="text-gray-400">No Image</span>
-                                @endif
-                            </td>
-                            <td class="p-3 flex gap-2 flex-wrap">
-                                <a href="{{ route('product.edit',$product->id) }}"
-                                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">Edit</a>
-
-                                <form action="{{ route('product.destroy',$product->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Delete</button>
-                                </form>
-
-                                <a href="{{ route('product.show',$product->id) }}"
-                                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">View</a>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-                <div class="mt-6 flex justify-center">
-                    {{ $products->links('pagination::tailwind') }}
-                </div>
-
-                @else
-                    <p class="text-gray-500 text-center py-10">No products found.</p>
-                @endif
+            <div id="product-data-container">
+                @include('products.table')
             </div>
+
         </div>
     </div>
 </div>
 
-<!-- AJAX Search -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-//ពន្យល់flowនៅក្នងscriptនេះ៖
-//1. ជ្រើសរើសinputដែលមានname="search" និងelementដែលមានid="productGrid"។
-//2. បន្ថែមevent listenerសម្រាប់keyupលើinput។
-//3. នៅពេលkeyupកើតឡើង៖
-//   - បញ្ចេញtimerដែលមានស្រាប់ដើម្បីទប់ស្កាត់ការស្វែងរករាប់ពាន់ដងនៅពេលអ្នកវាយលឿន។
-//   - កំណត់timerថ្មីដែលនឹងចាប់ផ្តើមបន្ទាប់ពី300ms។
-//   - នៅពេលtimerចាប់ផ្តើម៖
-//     - ទទួលបានតម្លៃស្វែងរកពីinput។
-//     - ប្រើfetch APIដើម្បីធ្វើសំណើGETទៅroute('product.index')ជាមួយqueryស្វែងរក។
-//     - បញ្ជាក់ថាសំណើនេះគឺAJAXដោយបន្ថែមheader 'X-Requested-With'។
-//     - បន្ទាប់ពីទទួលបានការឆ្លើយតបជាអត្ថបទHTMLពីម៉ាស៊ីនមេ៖
-//       - ប្ដូរតម្លៃinnerHTMLនៃproductGridជាមួយHTMLដែលទទួលបាន។
-//     - ប្រសិនបើមានកំហុសក្នុងការស្នើសុំAJAX៖
-//       - បង្ហាញកំហុសនៅក្នុងconsole។
-    const searchInput = document.querySelector('input[name="search"]');
-    const productGrid = document.getElementById('productGrid');
-    let timer;
+$(document).ready(function () {
 
-    searchInput.addEventListener('keyup', function() {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            const query = this.value;
-            fetch(`{{ route('product.index') }}?search=${query}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(res => res.text())
-            .then(html => { productGrid.innerHTML = html; })
-            .catch(err => console.error(err));
-        }, 300);
+    $('#productLink').on('click', function () {
+        $('#mainSidebar').addClass('hidden');
     });
+
+    function fetchProducts(page, search, category) {
+        $('#product-data-container').addClass('loading');
+        $.ajax({
+            url: "{{ route('admin.dashboard') }}?page=" + page + "&search=" + search + "&category=" + category,
+            success: function (data) {
+                $('#product-data-container').html(data).removeClass('loading');
+            },
+            error: function () {
+                alert('Failed to load products.');
+                $('#product-data-container').removeClass('loading');
+            }
+        });
+    }
+
+    let timer;
+    $(document).on('keyup', '#searchProduct', function () {
+        clearTimeout(timer);
+        timer = setTimeout(() => fetchProducts(1, $(this).val(), $('#filterCategory').val()), 300);
+    });
+
+    $(document).on('change', '#filterCategory', function () {
+        fetchProducts(1, $('#searchProduct').val(), $('#filterCategory').val());
+    });
+
+    $(document).on('click', '.pagination a', function (e) {
+        e.preventDefault();
+        let page = $(this).attr('href').split('page=')[1];
+        fetchProducts(page, $('#searchProduct').val(), $('#filterCategory').val());
+    });
+});
 </script>
 </x-layout>

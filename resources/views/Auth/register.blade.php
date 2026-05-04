@@ -1,76 +1,46 @@
+@extends('layouts.app')
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+@section('content')
+<div class="container mx-auto px-4 md:px-12 lg:px-24 py-16 flex flex-col md:flex-row items-center gap-10">
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+    <!-- ផ្នែករូបភាពខាងឆ្វេង -->
+    <div class="w-full md:w-1/2 bg-[#CBE4E8] rounded-r-md flex justify-center items-center p-10">
+        <img src="{{ asset('images/watch3.jpg') }}" alt="Register" class="max-w-full h-auto object-contain">
+    </div>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-4">
+    <!-- ផ្នែក Form ចុះឈ្មោះខាងស្តាំ -->
+    <div class="w-full md:w-1/2 max-w-md mx-auto">
+        <h1 class="text-4xl font-bold mb-4 tracking-wider">Create an account</h1>
+        <p class="text-gray-600 mb-10">Enter your details below</p>
 
-            <div class="card shadow">
-                <div class="card-header text-center">
-                    <h4>Register</h4>
-                </div>
+      <form action="{{ route('register') }}" method="POST" class="space-y-8">
+    @csrf
 
-                <div class="card-body">
+    <!-- Input Name -->
+    <div class="border-b border-gray-400">
+        <input type="text" name="name" value="{{ old('name') }}" placeholder="Name" class="w-full py-2 focus:outline-none bg-transparent" required>
+    </div>
+    @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                    {{-- Error Message --}}
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            {{ $errors->first() }}
-                        </div>
-                    @endif
+    <!-- Input Email -->
+    <div class="border-b border-gray-400">
+        <input type="text" name="email" value="{{ old('email') }}" placeholder="Email" class="w-full py-2 focus:outline-none bg-transparent" required>
+    </div>
+    @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                    <form method="POST" action="{{ route('register') }}">
-                        @csrf
+    <!-- Input Password -->
+    <div class="border-b border-gray-400">
+        <input type="password" name="password" placeholder="Password" class="w-full py-2 focus:outline-none bg-transparent" required>
+    </div>
+    @error('password') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                        <!-- Name -->
-                        <div class="mb-3">
-                            <label>Name</label>
-                            <input type="text" name="name" class="form-control" required>
-                        </div>
-
-                        <!-- Email -->
-                        <div class="mb-3">
-                            <label>Email</label>
-                            <input type="email" name="email" class="form-control" required>
-                        </div>
-
-                        <!-- Password -->
-                        <div class="mb-3">
-                            <label>Password</label>
-                            <input type="password" name="password" class="form-control" required>
-                        </div>
-
-                        <!-- Button -->
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-success">
-                                Register
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Login link -->
-                    <div class="text-center mt-3">
-                        <a href="{{ route('login') }}">
-                            Already have an account? Login
-                        </a>
-                    </div>
-
-                </div>
-            </div>
-
-        </div>
+    <button type="submit" class="w-full bg-red-500 ...">Create Account</button>
+</form>
+        <!-- លីងទៅកាន់ទំព័រ Login -->
+        <p class="text-center mt-8 text-gray-600">
+            Already have account?
+            <a href="{{ route('login') }}" class="text-black font-bold border-b border-gray-500 ml-2 hover:text-red-500 hover:border-red-500">Log in</a>
+        </p>
     </div>
 </div>
-
-</body>
-</html>
+@endsection

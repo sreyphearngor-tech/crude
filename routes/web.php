@@ -1,79 +1,55 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
-/*
-|--------------------------------------------------------------------------
-| Public Routes
-|--------------------------------------------------------------------------
-*/
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\UserController;
 
-// Homepage (accessible to everyone)
-Route::get('/', [ProductController::class, 'home'])->name('home');
+// ១. PUBLIC ROUTES
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Authentication Routes
-Route::get('/login', [RegisterController::class, 'loginForm'])->name('login.form');
-Route::post('/login', [RegisterController::class, 'login'])->name('login');
+Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show_detail');
+Route::get('/category/{categoryId}', [ProductController::class, 'getByCategory'])->name('category.products');
+Route::get('/search', [ProductController::class, 'search'])->name('search');
 
-Route::get('/register', [RegisterController::class, 'registerForm'])->name('register.form');
-Route::post('/register', [RegisterController::class, 'register'])->name('register');
-
-Route::post('/logout', [RegisterController::class, 'logout'])->name('logout');
-
-/*
-|--------------------------------------------------------------------------
-| Client Routes (role: client)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth', 'role:client'])->group(function () {
-    Route::get('/client/home', function () {
-        return view('clients.home');
-    })->name('client.home');
+// ២. GUEST ROUTES
+Route::middleware(['guest'])->group(function () {
+    Route::get('/register', [RegisterController::class, 'registerForm'])->name('registerForm');
+    Route::post('/register', [RegisterController::class, 'register'])->name('register');
+    Route::get('/login', [RegisterController::class, 'loginForm'])->name('loginForm');
+    Route::post('/login', [RegisterController::class, 'login'])->name('login');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Admin Routes (role: admin) – No prefix
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth','role:admin'])->group(function(){
-
-    Route::get('/admin/dashboard', function(){
-        return redirect()->route('product.index');
-    })->name('admin.dashboard');
-
-   // Route::resource('product', ProductController::class);
-
-//cartcontroller
-
-    // Product CRUD
-    Route::get('/products', [ProductController::class, 'index'])->name('product.index');
-    Route::get('/products/create', [ProductController::class, 'create'])->name('product.create');
-    Route::post('/products', [ProductController::class, 'store'])->name('product.store');
-    Route::get('/products/{product}', [ProductController::class, 'show'])->name('product.show');
-    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('product.edit');
-    Route::put('/products/{product}', [ProductController::class, 'update'])->name('product.update');
-    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('product.destroy');
-});
-Route::get('/product/{id}', [ProductController::class, 'show2'])->name('product.show2');
-Route::get('/prodhome', [ProductController::class, 'home'])->name('products.home');
+// ៣. AUTHENTICATED ROUTES
 Route::middleware(['auth'])->group(function () {
-    // ទុកតែ Route ណាដែលចាំបាច់ត្រូវ Login ដូចជា Add to Cart ឬ Checkout
-    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-});
+    Route::post('/logout', [RegisterController::class, 'logout'])->name('logout');
 
+    // A. ADMIN ROUTES
+    Route::middleware(['role:admin']) // ប្រាកដថាមាន Middleware នេះ
+        ->prefix('admin')
+        ->name('admin.')
+        ->group(function () {
+            Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+            Route::resource('product', ProductController::class);
+            Route::resource('category', CategoryController::class);
+            Route::resource('users', UserController::class);
+            Route::get('/orders', [AdminController::class, 'orders'])->name('orders.index');
+    });
 
-Route::middleware(['auth'])->group(function () {
-    // View Cart
-    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-
-    // Add Item (from Product Grid)
-    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
-Route::patch('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
-
-    // Remove Item (from Cart Page)
-    Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+    // B. CLIENT ROUTES
+    Route::middleware(['role:client'])->group(function () {
+        Route::controller(CartController::class)->group(function () {
+            Route::get('/cart', 'index')->name('cart.index');
+            Route::post('/cart/add', 'addToCart')->name('cart.store');
+            Route::post('/cart/update', 'update')->name('cart.update');
+            Route::post('/cart/remove', 'remove')->name('cart.remove');
+            Route::post('/cart/coupon', 'applyCoupon')->name('cart.coupon');
+            Route::post('/checkout', 'checkout')->name('cart.checkout');
+        });
+        Route::get('/my-orders', [RegisterController::class, 'orders'])->name('client.orders');
+    });
 });

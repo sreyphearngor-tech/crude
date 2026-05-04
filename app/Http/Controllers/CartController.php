@@ -2,97 +2,148 @@
 
 namespace App\Http\Controllers;
 
-namespace App\Http\Controllers;
-use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
-use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\Order;
+use App\Models\OrderItem;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class CartController extends AuthController
 {
     /**
-     * Display the shopping cart items.
+     * បង្ហាញទំព័រកន្ត្រកទំនិញ
      */
     public function index()
     {
-        // Eager load the cart items and their associated products
-        // This prevents the "N+1" query problem in your Blade view
-        $cart = Auth::user()->cart()->with('items.product')->first();
-
+        $cart = session()->get('cart', []);
         return view('cart.index', compact('cart'));
     }
-public function update(Request $request, $id)
-{
-    $cartItem = CartItem::findOrFail($id);
 
-    // Security check
-    if ($cartItem->cart->user_id !== auth()->id()) {
-        return back();
+    /**
+     * បន្ថែមទំនិញទៅក្នុងកន្ត្រក (Session)
+     */
+    public function addToCart(Request $request)
+    {
+        // ទទួលយក ID ពី input 'id' ដែលផ្ញើមកពី Form
+        $id = $request->id;
+        $product = Product::findOrFail($id);
+
+        $cart = session()->get('cart', []);
+
+        // ប្រសិនបើមានទំនិញនេះក្នុងកន្ត្រករួចហើយ បូកបន្ថែមចំនួន (Quantity)
+        if(isset($cart[$id])) {
+            $cart[$id]['quantity']++;
+        } else {
+            // ប្រសិនបើមិនទាន់មាន បង្កើត Item ថ្មីក្នុង Session
+            $cart[$id] = [
+                "name" => $product->name,
+                "quantity" => 1,
+                "price" => $product->price,
+                "image" => $product->image
+            ];
+        }
+
+        session()->put('cart', $cart);
+        return redirect()->back()->with('success', 'បានបន្ថែមទៅក្នុងកន្ត្រកជោគជ័យ!');
     }
 
-    $action = $request->input('action');
+    /**
+     * កែសម្រួលចំនួនទំនិញក្នុងកន្ត្រក (AJAX ឬ Form)
+     */
+    public function update(Request $request)
+    {
+        if($request->id && $request->quantity) {
+            $cart = session()->get('cart');
 
-    if ($action === 'increase') {
-        $cartItem->increment('quantity');
-    } elseif ($action === 'decrease') {
-        if ($cartItem->quantity > 1) {
-            $cartItem->decrement('quantity');
-        } else {
-            $cartItem->delete(); // Remove if quantity becomes 0
-            return back()->with('success', 'Item removed.');
+            if(isset($cart[$request->id])) {
+                $cart[$request->id]["quantity"] = $request->quantity;
+                session()->put('cart', $cart);
+                return response()->json(['success' => true]);
+            }
+        }
+
+        return response()->json(['success' => false], 400);
+    }
+
+    /**
+     * លុបទំនិញចេញពីកន្ត្រក
+     */
+    public function remove(Request $request)
+    {
+        if($request->id) {
+            $cart = session()->get('cart');
+            if(isset($cart[$request->id])) {
+                unset($cart[$request->id]);
+                session()->put('cart', $cart);
+            }
+            return redirect()->back()->with('success', 'បានលុបទំនិញចេញពីកន្ត្រក!');
         }
     }
 
-    return back();
-}
     /**
-     * Add a product to the cart.
+     * ដំណើរការការបញ្ជាទិញ (Checkout)
      */
-    public function add(Request $request)
+    public function checkout(Request $request)
     {
-        // 1. Validate the incoming request
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-        ]);
+        $cart = session()->get('cart');
 
-        // 2. Get the authenticated user
-        $user = Auth::user();
+        if (!$cart) {
+            return redirect()->back()->with('error', 'កន្ត្រកទំនិញរបស់អ្នកនៅទទេ!');
+        }
 
-        // 3. Find the user's cart or create a new one if it doesn't exist
-        // This uses the hasOne relationship you defined in the User model
-        $cart = $user->cart ?: $user->cart()->create();
-
-        // 4. Check if this product is already in the cart
-        $cartItem = $cart->items()->where('product_id', $request->product_id)->first();
-
-        if ($cartItem) {
-            // If it exists, just increase the quantity
-            $cartItem->increment('quantity');
-        } else {
-            // If it's new, create a new CartItem record
-            $cart->items()->create([
-                'product_id' => $request->product_id,
-                'quantity' => 1,
+        // ប្រើ Transaction ដើម្បីធានាថាទិន្នន័យចូលទាំង Order និង OrderItem
+        DB::beginTransaction();
+        try {
+            // ១. បង្កើតទិន្នន័យ Order
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'total_amount' => $this->calculateTotal($cart),
+                'status' => 'pending',
             ]);
-        }
 
-        return redirect()->back()->with('success', 'Product added to cart successfully!');
+            // ២. បញ្ចូលទំនិញនីមួយៗទៅក្នុង OrderItem និងកាត់ស្តុក
+            foreach ($cart as $id => $details) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $id,
+                    'quantity' => $details['quantity'],
+                    'price' => $details['price'],
+                ]);
+
+                // កាត់ស្តុកផលិតផល
+                $product = Product::find($id);
+                if ($product) {
+                    if($product->qty < $details['quantity']) {
+                        throw new \Exception("ផលិតផល {$product->name} មិនគ្រប់គ្រាន់ក្នុងស្តុកទេ!");
+                    }
+                    $product->decrement('qty', $details['quantity']);
+                }
+            }
+
+            DB::commit();
+
+            // លុប Cart ចេញពី Session ក្រោយទិញរួច
+            session()->forget('cart');
+
+            return redirect()->route('home')->with('success', 'ការបញ្ជាទិញរបស់អ្នកត្រូវបានទទួលយក!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'មានបញ្ហា៖ ' . $e->getMessage());
+        }
     }
 
     /**
-     * Remove an item from the cart.
+     * មុខងារជំនួយសម្រាប់គណនាតម្លៃសរុប
      */
-    public function remove($id)
+    private function calculateTotal($cart)
     {
-        $cartItem = CartItem::findOrFail($id);
-
-        // Ensure the user owns the cart this item belongs to
-        if ($cartItem->cart->user_id === Auth::id()) {
-            $cartItem->delete();
+        $total = 0;
+        foreach($cart as $item) {
+            $total += $item['price'] * $item['quantity'];
         }
-
-        return redirect()->back()->with('success', 'Item removed from cart.');
+        return $total;
     }
 }

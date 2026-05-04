@@ -6,18 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
-    {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id(); // Primary key
-            $table->string('name', 100);
-            $table->string('email', 191)->unique(); // safe for utf8mb4
-            $table->string('password');
-          $table->enum('role', ['admin', 'client', 'user'])->default('user');// fixed role
-            $table->rememberToken(); // for login sessions
-            $table->timestamps(); // created_at & updated_at
-        });
-    }
+   public function up(): void
+{
+    Schema::create('users', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('email')->unique();
+     $table->string('password');
+        $table->string('role')->default('client'); // ត្រូវបន្ថែមបន្ទាត់នេះ
+
+        $table->rememberToken();
+        $table->timestamps();
+    });
+}
 
     public function down(): void
     {

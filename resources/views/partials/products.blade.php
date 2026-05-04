@@ -1,6 +1,7 @@
 @foreach($products as $product)
     <div class="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden">
 
+        {{-- Product Image Section --}}
         <div class="relative aspect-[4/5] overflow-hidden bg-gray-50">
             <img src="{{ $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/400x500' }}"
                  alt="{{ $product->name }}"
@@ -17,10 +18,11 @@
             </button>
         </div>
 
+        {{-- Product Info Section --}}
         <div class="p-5 flex flex-col flex-grow">
             <span class="text-[10px] font-bold text-pink-500 uppercase tracking-widest mb-1">New Arrival</span>
 
-            <a href="{{ route('product.show2', $product->id) }}" class=" !no-underline  text-gray-800 font-bold text-lg leading-tight hover:text-blue-600 transition line-clamp-1 mb-2">
+            <a href="{{ route('product.show2', $product->id) }}" class="!no-underline text-gray-800 font-bold text-lg leading-tight hover:text-red-600 transition line-clamp-1 mb-2">
                 {{ $product->name }}
             </a>
 
@@ -32,20 +34,32 @@
             </div>
 
             <div class="mt-auto space-y-2">
-               <form action="{{ route('cart.add') }}" method="POST">
-    @csrf
-    <input type="hidden" name="product_id" value="{{ $product->id }}">
-    <button type="submit"
-            class="flex items-center justify-center gap-2 w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-pink-500 transition-all duration-300 shadow-md">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-        </svg>
-        Add to Cart
-    </button>
-</form>
+                @auth
+                    {{-- User is Logged In: Show Add to Bag --}}
+                    @if($product->qty > 0)
+                        <form action="{{ route('cart.add', $product->id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-700 transition shadow-lg shadow-red-900/20">
+                                Add to Bag
+                            </button>
+                        </form>
+                    @else
+                        <button disabled class="w-full bg-gray-200 text-gray-400 py-3 rounded-xl font-black uppercase tracking-widest text-xs cursor-not-allowed">
+                            Unavailable
+                        </button>
+                    @endif
+                @else
+                    {{-- User is Guest: Show Login Redirect --}}
+                    <a href="{{ route('login') }}" class="flex items-center justify-center gap-2 w-full bg-gray-900 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-800 transition !no-underline">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Login to Purchase
+                    </a>
+                @endauth
 
                 <a href="{{ route('product.show2', $product->id) }}"
-                   class=" !no-underline  block text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition py-1">
+                   class="!no-underline block text-center text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-600 transition py-1">
                     View Detail
                 </a>
             </div>

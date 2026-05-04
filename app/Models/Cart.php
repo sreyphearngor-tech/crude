@@ -1,22 +1,23 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cart extends Model
 {
-    protected $fillable = ['user_id'];
+    protected $fillable = ['user_id', 'product_id', 'quantity'];
 
-    public function user(): BelongsTo
+    // ទំនាក់ទំនងទៅកាន់ផលិតផល
+    public function product()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Product::class);
     }
 
-    public function items(): HasMany
+    // ទំនាក់ទំនងទៅកាន់អ្នកប្រើប្រាស់
+    public function user()
     {
-        return $this->hasMany(CartItem::class);
+        return $this->belongsTo(User::class);
     }
 }
 

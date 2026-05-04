@@ -1,135 +1,147 @@
 <x-layout>
-<div class="flex min-h-screen bg-gray-100">
+    <div class="flex min-h-screen bg-gray-50">
 
-    <aside class="w-64 bg-gray-900 shadow-xl flex flex-col text-white relative inline-block">
-        <div class="p-6 border-b border-gray-800">
-            <h1 class="text-2xl font-bold tracking-tight text-blue-400">eProduct</h1>
-        </div>
-        <nav class="flex-1 p-4 flex flex-col gap-2">
-            <p class="text-xs uppercase text-gray-500 font-semibold px-4 mb-2">Main Menu</p>
-            <a href="{{ route('product.index') }}"
-               class="flex btn btn-outline items-center gap-3 px-4 py-3 rounded-xl transition bg-danger hover:bg-gray-800 hover:text-white {{ request()->routeIs('product.*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                <span>📦</span> Products
-            </a>
-            <a href="#" class="flex btn btn-outline items-center gap-3 px-4 py-3 rounded-xl transition  bg-danger hover:bg-gray-800 hover:text-white">
-                 <span>📊</span> Analytics
-                <span>🛒</span> Orders
-            </a>
-            <a href="#" class="flex btn btn-outline items-center gap-3 px-4 py-3 rounded-xl transition bg-danger hover:bg-gray-800 hover:text-white">
-                <span>👥</span> Admins
-            </a>
-            <div class="mt-auto pt-4 border-t border-gray-800">
-                <a href="#" class="flex btn btn-outline items-center gap-3 px-4 py-3 rounded-xl transition bg-danger">
-                    <span>⚙️</span> Settings
-                </a>
-            </div>
-        </nav>
-    </aside>
-
-    <div class="flex-1 p-8 overflow-y-auto">
-
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h2 class="text-3xl font-bold text-gray-800">Dashboard</h2>
-                <p class="text-gray-500">Manage your product inventory and sales.</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-400">{{ now()->format('D, d M Y') }}</span>
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">
-                    AD
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-white shadow-xl flex flex-col sticky top-0 h-screen transition-all duration-300">
+            <!-- Sidebar Header -->
+            <div class="p-6 border-b border-gray-800">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-500/20">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-black tracking-tight uppercase italic">E-Shop <span class="text-blue-500">Pro</span></h1>
                 </div>
             </div>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <p class="text-gray-500 text-sm font-medium">Total Products</p>
-                <h4 class="text-2xl font-bold text-gray-800">{{ $products->total() }}</h4>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <p class="text-gray-500 text-sm font-medium">Stock Value</p>
-                <h4 class="text-2xl font-bold text-green-600">${{ number_format($products->sum(fn($p) => $p->price * $p->qty), 2) }}</h4>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <p class="text-gray-500 text-sm font-medium">Low Stock Items</p>
-                <h4 class="text-2xl font-bold text-red-500">{{ $products->where('qty', '<', 5)->count() }}</h4>
-            </div>
-        </div>
+            <!-- Sidebar Navigation -->
+            <nav class="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2 px-4">Menu</p>
 
-        <div class="bg-white shadow-sm border border-gray-100 rounded-2xl overflow-hidden">
+                <a href="{{ route('admin.dashboard') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-gray-800 text-gray-400 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <span class="font-medium">Dashboard</span>
+                </a>
 
-            <div class="p-6 border-b border-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
-                <form action="{{ route('product.index') }}" method="GET" class="relative w-full md:w-96">
-                    <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
-                    <input type="text" name="search" placeholder="Search by name..." value="{{ request('search') }}"
-                           class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                <a href="{{ route('admin.product.index') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('admin.product.*') ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-gray-800 text-gray-400 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    <span class="font-medium">Products</span>
+                </a>
+
+                <!-- Add more menu items here -->
+            </nav>
+
+            <!-- Sidebar Footer / Logout -->
+            <div class="p-4 border-t border-gray-800">
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all font-medium">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        Logout
+                    </button>
                 </form>
+            </div>
+        </aside>
 
-                <div class="flex gap-3">
-                    <button class="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-gray-600">Export</button>
-                    <a href="{{ route('product.create') }}" class=" btn btn-outline bg-info hover:bg-info-dark text-white px-6 py-2 rounded-xl shadow-md shadow-blue-200 transition">
-                        + Add Product
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-x-hidden">
+            <!-- Top Header (Optional) -->
+            <header class="bg-white border-b border-gray-100 py-4 px-8 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest">Administrator Area</h2>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm font-semibold text-gray-700">{{ Auth::user()->name ?? 'Admin' }}</span>
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold border-2 border-white shadow-sm">
+                        {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-8">
+                <!-- Page Header -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-4xl font-black text-gray-900 tracking-tight">Dashboard Overview</h2>
+                        <p class="text-gray-500 mt-1">Manage your inventory and monitor performance.</p>
+                    </div>
+                    <a href="{{ route('admin.product.create') }}"
+                       class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 font-bold">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add New Product
                     </a>
                 </div>
-            </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-gray-50/50 text-gray-500 uppercase text-xs font-bold tracking-wider">
-                            <th class="px-6 py-4 text-left">Product</th>
-                            <th class="px-6 py-4 text-left">Price</th>
-                            <th class="px-6 py-4 text-left">Inventory</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                        @forelse ($products as $product)
-                        <tr class="hover:bg-gray-50/80 transition">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                        @if($product->image && Storage::disk('public')->exists($product->image))
-                                            <img src="{{ asset('storage/' . $product->image) }}" class="w-full h-full object-cover">
-                                        @else
-                                            <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">N/A</div>
-                                        @endif
-                                    </div>
-                                    <span class="font-semibold text-gray-800">{{ $product->name }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 font-medium text-gray-700">
-                                ${{ number_format($product->price, 2) }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 rounded-full text-xs font-bold {{ $product->qty < 5 ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600' }}">
-                                    {{ $product->qty }} in stock
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex justify-end gap-2 underline-hidden">
-                                    <a href="{{ route('product.show',$product->id) }}" class="p-2 text-gray-400 hover:text-blue-600 transition  no-underline " title="View">👁️</a>
-                                    <a href="{{ route('product.edit',$product->id) }}" class="p-2 text-gray-400 hover:text-green-600 transition  no-underline " title="Edit">✏️</a>
-                                    <form action="{{ route('product.destroy',$product->id) }}" method="POST" class="inline">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" onclick="return confirm('Delete this product?')" class="p-2 text-gray-400 hover:text-red-600 transition" title="Delete">🗑️</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="text-center py-12 text-gray-400">No products found matching your search.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                <!-- Toolbar: Search & Filters -->
+                <div class="mb-8 bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-4">
+                    <div class="relative w-full md:w-1/3">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </span>
+                        <input type="text" id="searchProduct" placeholder="ស្វែងរកតាមឈ្មោះផលិតផល..."
+                               class="block w-full pl-12 pr-4 py-3.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-inner">
+                    </div>
 
-            <div class="p-6 bg-gray-50 border-t border-gray-100">
-                {{ $products->links('pagination::tailwind') }}
+                    <div class="w-full md:w-1/4">
+                        <select id="filterCategory" class="block w-full px-4 py-3.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner">
+                            <option value="">គ្រប់ប្រភេទទាំងអស់</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Product Table Section -->
+                <div id="product-data-container" class="transition-opacity duration-300">
+                    @include('products.table')
+                </div>
             </div>
-        </div>
+        </main>
     </div>
-</div>
+
+    <!-- AJAX Script (Keep your existing script here) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function fetchProducts(page, search, category) {
+                $.ajax({
+                    url: "{{ route('admin.dashboard') }}?page=" + page + "&search=" + search + "&category=" + category,
+                    beforeSend: function() {
+                        $('#product-data-container').addClass('opacity-50 pointer-events-none');
+                    },
+                    success: function(data) {
+                        $('#product-data-container').html(data).removeClass('opacity-50 pointer-events-none');
+                    },
+                    error: function() {
+                        alert('Failed to load products.');
+                        $('#product-data-container').removeClass('opacity-50 pointer-events-none');
+                    }
+                });
+            }
+
+            let timer;
+            $(document).on('keyup', '#searchProduct', function() {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    fetchProducts(1, $(this).val(), $('#filterCategory').val());
+                }, 300);
+            });
+
+            $(document).on('change', '#filterCategory', function() {
+                fetchProducts(1, $('#searchProduct').val(), $(this).val());
+            });
+
+            $(document).on('click', '.pagination a', function(e) {
+                e.preventDefault();
+                let page = $(this).attr('href').split('page=')[1];
+                fetchProducts(page, $('#searchProduct').val(), $('#filterCategory').val());
+            });
+        });
+    </script>
 </x-layout>

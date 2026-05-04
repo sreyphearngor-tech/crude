@@ -18,19 +18,33 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role',
+// app/Models/User.php
+protected $fillable = [
+    'name',
+    'email',
+    'password',
+    'role', // ត្រូវតែមាន field នេះជាដាច់ខាត
+];
 
+public function isAdmin(): bool
+{
+    return $this->role === 'admin';
+}
 
-    ];
-public function cart()
-    {
-        // A user has one cart
-        return $this->hasOne(Cart::class);
-    }
+/**
+ * ឆែកថាតើ User ជា Client ឬអត់
+ */
+public function isClient(): bool
+{
+    return $this->role === 'client';
+}
+public function orders() {
+    return $this->hasMany(Order::class);
+}
+/**
+ * ឆែកថាតើ User ជា Client ឬអត់
+ */
+
     /**
      * The attributes that should be hidden for serialization.
      *

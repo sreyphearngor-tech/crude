@@ -1,109 +1,222 @@
-<x-layout>
-		<!-- Navbar -->
-<nav class="bg-gray-900/95 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800 px-8 py-4 flex justify-between items-center shadow-lg">
+@extends('layouts.app')
 
-    <div class="flex items-center gap-2">
-        <div class="bg-red-600 p-2 rounded-lg shadow-lg shadow-red-900/20">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-            </svg>
+@section('content')
+<div class="container mx-auto px-4 md:px-12 lg:px-24">
+    <!-- Hero Section -->
+    <div class="flex flex-col md:flex-row gap-8 py-10">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-1/4 border-r border-gray-200 pr-4 hidden md:block">
+            <ul class="space-y-4 font-medium text-gray-700">
+                @if(isset($categories) && $categories->count() > 0)
+                    @foreach($categories as $cat)
+                        <li>
+                            <a href="{{ route('category.products', $cat->id) }}" class="flex justify-between items-center cursor-pointer hover:text-[#DB4444] transition">
+                                {{ $cat->name }} <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </a>
+                        </li>
+                    @endforeach
+                @else
+                    <li class="text-gray-400 italic">No categories found</li>
+                @endif
+            </ul>
+        </aside>
+
+        <!-- Main Banner -->
+        <div class="w-full md:w-3/4 bg-black text-white p-8 md:p-12 flex items-center relative rounded-sm overflow-hidden">
+            <div class="z-10 relative">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="{{ asset('images/Apple.jpg') }}" alt="Apple" class="w-8">
+                    <span class="text-lg">iPhone 14 Series</span>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">Up to 10%<br>off Voucher</h1>
+                <a href="#" class="border-b-2 border-white pb-1 font-semibold hover:text-gray-300 transition">Shop Now →</a>
+            </div>
+            <img src="{{ asset('images/watch3.jpg') }}" alt="Promo" class="absolute right-0 bottom-0 w-2/3 object-contain opacity-80 md:opacity-100">
         </div>
-        <h1 class="text-2xl font-black tracking-tight text-white">
-            e<span class="text-red-600">Product</span>
-        </h1>
     </div>
+<!-- Search Result Title (បង្ហាញតែពេលមានការ Search) -->
+    @if(request('query'))
+        <div class="mb-10">
+            <h2 class="text-2xl font-bold">Search Results for: <span class="text-red-500">"{{ request('query') }}"</span></h2>
+            <p class="text-gray-500">Found {{ $products->count() }} items</p>
+        </div>
+    @endif
+    <!-- Flash Sales Section -->
+    <section class="mt-20">
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-5 h-10 bg-red-500 rounded-sm"></div>
+            <span class="text-red-500 font-bold">Today's</span>
+        </div>
 
-    <ul class="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-gray-300">
-        <li>
-            <a href="/" class="relative group !no-underline text-gray-300 hover:text-white transition">
-                Home
-                <span class="absolute -bottom-1 left-0 w-0 h-1 bg-red-600 transition-all duration-300 group-hover:w-full"></span>
-            </a>
-        </li>
-        <li>
-            <a href="#" class="relative group !no-underline text-gray-300 hover:text-white transition">
-                About
-                <span class="absolute -bottom-1 left-0 w-0 h-1 bg-red-600 transition-all duration-300 group-hover:w-full"></span>
-            </a>
-        </li>
-        <li>
-            <a href="#" class="relative group !no-underline text-gray-300 hover:text-white transition">
-                Contact
-                <span class="absolute -bottom-1 left-0 w-0 h-1 bg-red-600 transition-all duration-300 group-hover:w-full"></span>
-            </a>
-        </li>
-    </ul>
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+            <div class="flex flex-wrap items-end gap-10 md:gap-20">
+                <h2 class="text-3xl md:text-4xl font-bold tracking-wider">Flash Sales</h2>
+                <!-- Countdown Timer -->
+                <div class="flex gap-4 text-center">
+                    <div><p class="text-[10px] font-bold">Days</p><span class="text-2xl md:text-3xl font-black">03</span></div>
+                    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
+                    <div><p class="text-[10px] font-bold">Hours</p><span class="text-2xl md:text-3xl font-black">23</span></div>
+                    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
+                    <div><p class="text-[10px] font-bold">Mins</p><span class="text-2xl md:text-3xl font-black">19</span></div>
+                    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
+                    <div><p class="text-[10px] font-bold">Secs</p><span class="text-2xl md:text-3xl font-black">56</span></div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button class="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition">←</button>
+                <button class="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition">→</button>
+            </div>
+        </div>
 
-    <div class="flex items-center gap-6">
+        <!-- Product Grid (Flash Sales) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            @if(isset($products) && $products->count() > 0)
+                @foreach($products as $product)
+                    <div class="group">
+                        <div class="bg-gray-100 rounded-md p-8 relative flex justify-center items-center h-64 overflow-hidden">
+                            @if(isset($product->discount))
+                                <span class="absolute top-3 left-3 bg-red-500 text-white text-xs px-3 py-1 rounded">-{{ $product->discount }}%</span>
+                            @endif
 
-        <form action="{{ route('products.home') }}" method="GET" class="relative hidden lg:block">
-            <input type="text" name="search" id="searchInput" value="{{ request('search') }}"
-                   placeholder="Search items..."
-                   class="bg-gray-100 border-none rounded-full py-2 pl-10 pr-4 w-64 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-300 text-sm">
-            <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-        </form>
+                            <div class="absolute top-3 right-3 flex flex-col gap-2 z-20">
+                                <button class="bg-white p-2 rounded-full shadow-sm hover:bg-red-500 hover:text-white transition"><i class="far fa-heart"></i></button>
+                                <a href="{{ route('product.show_detail', $product->id) }}" class="bg-white p-2 rounded-full shadow-sm hover:bg-red-500 hover:text-white transition flex items-center justify-center">
+                                    <i class="far fa-eye"></i>
+                                </a>
+                            </div>
 
-        <div class="flex items-center gap-3 border-l pl-6 border-gray-200">
-            @guest
-                <a href="{{ route('login') }}" class="!no-underline text-gray-300 hover:text-white text-sm font-bold transition">Login</a>
-                <a href="{{ route('register') }}" class="!no-underline bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-full text-sm font-bold transition">Register</a>
+                            <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="max-h-full object-contain transition-transform group-hover:scale-110" onerror="this.src='https://placehold.co/300x300?text=No+Image'">
+
+                            <!-- Form Add To Cart -->
+                            <form action="{{ route('cart.store') }}" method="POST" class="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-all">
+                                @csrf
+                                <input type="hidden" name="id" value="{{ $product->id }}">
+                                <button type="submit" class="w-full bg-black text-white py-2 hover:bg-gray-800 transition">
+                                    Add To Cart
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="mt-4 space-y-2">
+                            <h3 class="font-bold truncate text-gray-800">{{ $product->name }}</h3>
+                            <div class="flex gap-3 font-medium">
+                                <span class="text-red-500">${{ number_format($product->price, 2) }}</span>
+                                @if(isset($product->old_price))
+                                    <span class="text-gray-400 line-through">${{ number_format($product->old_price, 2) }}</span>
+                                @endif
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex text-yellow-400 text-sm">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-gray-400 text-sm font-bold">({{ $product->reviews_count ?? 0 }})</span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             @else
-                <a href="{{ route('cart.index') }}" class="relative p-2 text-gray-400 hover:text-red-500 transition group" title="View Cart">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-
-                 <span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-gray-900">
-    {{ Auth::user()->cart ? Auth::user()->cart->items->sum('quantity') : 0 }}
-</span>
-                </a>
-
-                <form action="{{ route('logout') }}" method="POST" class="ml-2">
-                    @csrf
-                    <button type="submit" class="text-gray-400 hover:text-white text-sm font-bold transition p-2">
-                        Logout
-                    </button>
-                </form>
-            @endguest
+                <p class="col-span-full text-center text-gray-400">No products available at the moment.</p>
+            @endif
         </div>
-    </div>
-</nav>
 
-		<!-- Products Grid -->
-		<section class="max-w-6xl mx-auto py-6 px-6 badge-danger">
-			<h2 class="relative text-3xl font-black text-gray-900 inline-block pb-2">
-    Our <span class="text-red-600">Products</span>
-    <span class="absolute bottom-0 left-0 w-20 h-1.5 bg-red-600 rounded-full"></span>
-</h2>
+        <div class="flex justify-center mt-12">
+            <a href="#" class="bg-red-500 text-white px-12 py-4 rounded-sm font-medium hover:bg-red-600 transition">View All Products</a>
+        </div>
+    </section>
 
-				<div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-10 py-5">
-						@include('partials.products', ['products' => $products])
-				</div>
-		</section>
+    <hr class="my-20 border-gray-100">
 
-		<!-- Live Search Script -->
+    <!-- Categories Section -->
+    <section>
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-5 h-10 bg-red-500 rounded-sm"></div>
+            <span class="text-red-500 font-bold">Categories</span>
+        </div>
+        <div class="flex justify-between items-end mb-10">
+            <h2 class="text-3xl font-bold tracking-wider text-gray-900">Browse By Category</h2>
+            <div class="flex gap-2">
+                <button class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">←</button>
+                <button class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">→</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            @if(isset($categories))
+                @foreach($categories as $category)
+                    <a href="{{ route('category.products', $category->id) }}" class="group border border-gray-200 rounded-md p-6 flex flex-col items-center justify-center gap-4 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all cursor-pointer shadow-sm">
+                        <div class="w-14 h-14 flex items-center justify-center">
+                            @if($category->image)
+                                <img src="{{ asset('storage/' . $category->image) }}" class="w-full h-full object-contain group-hover:brightness-0 group-hover:invert">
+                            @else
+                                <i class="fa-solid fa-layer-group text-3xl"></i>
+                            @endif
+                        </div>
+                        <span class="text-sm font-medium">{{ $category->name }}</span>
+                    </a>
+                @endforeach
+            @endif
+        </div>
+    </section>
 
-		<script>
-				const searchInput = document.getElementById('searchInput');//ប្រើID ដើម្បីយក input element ដែលមាន ID "searchInput"
-				const productGrid = document.getElementById('productGrid');//ប្រើID ដើម្បីយក div element ដែលមាន ID "productGrid" ដែលជាកន្លែងដែលបង្ហាញផលិតផល
-				let timer;//ប្រើសម្រាប់រក្សាទុក timer ដែលនឹងត្រូវបានប្រើសម្រាប់ការពន្យារពេលការស្វែងរក
+    <!-- Best Selling Section -->
+    <section class="my-20">
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-5 h-10 bg-red-500 rounded-sm"></div>
+            <span class="text-red-500 font-bold">This Month</span>
+        </div>
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="text-3xl font-bold tracking-wider text-gray-900">Best Selling Products</h2>
+            <a href="#" class="bg-red-500 text-white px-10 py-3 rounded-sm hover:bg-red-600 transition">View All</a>
+        </div>
 
-				searchInput.addEventListener('keyup', function() {//បន្ថែម event listener សម្រាប់ព្រឹត្តិការណ៍ "keyup" នៅលើ input element ដែលមាន ID "searchInput"
-						clearTimeout(timer);//បញ្ចប់ timer មុននេះ ប្រសិនបើមាន timer មុននេះកំពុងដំណើរការ
-						timer = setTimeout(() => {//កំណត់ timer ថ្មី ដែលនឹងត្រូវបានអនុវត្តបន្ទាប់ពី 10 milliseconds
-								const query = this.value;//យកតម្លៃដែលបានបញ្ចូលក្នុង input element ហើយរក្សាទុកក្នុងអថេរ "query"
-								fetch(`/?search=${query}`, {
-												headers: {
-														'X-Requested-With': 'XMLHttpRequest'
-												}
-										})
-										.then(res => res.text())
-										.then(html => {
-												productGrid.innerHTML = html;
-										});
-						}, 10);
-				});
-		</script>
-</x-layout>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- ដោះស្រាយបញ្ហាជួរ 158: ឆែកមើលថាតើ Variable មានឬអត់ -->
+            @if(isset($bestSellingProducts) && $bestSellingProducts->count() > 0)
+                @foreach($bestSellingProducts as $product)
+                    <div class="group">
+                        <div class="bg-gray-100 rounded-md p-10 relative overflow-hidden flex items-center justify-center h-64">
+                            <img src="{{ asset('storage/' . $product->image) }}" class="max-h-full object-contain group-hover:scale-105 transition" onerror="this.src='https://placehold.co/300x300?text=No+Image'">
+
+                            <div class="absolute top-4 right-4 flex flex-col gap-2">
+                                <button class="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white shadow-sm transition"><i class="fa-regular fa-heart"></i></button>
+                                <a href="{{ route('product.show_detail', $product->id) }}" class="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white shadow-sm transition">
+                                    <i class="fa-regular fa-eye"></i>
+                                </a>
+                            </div>
+
+                            <form action="{{ route('cart.store') }}" method="POST" class="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-all">
+                                @csrf
+                                <input type="hidden" name="id" value="{{ $product->id }}">
+                                <button type="submit" class="w-full bg-black text-white py-2 hover:bg-gray-800 transition">
+                                    Add To Cart
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="mt-4">
+                            <h3 class="font-bold text-lg mb-1 truncate text-gray-800">{{ $product->name }}</h3>
+                            <div class="flex gap-3 items-center">
+                                <span class="text-red-500 font-bold">${{ number_format($product->price, 2) }}</span>
+                                @if(isset($product->old_price))
+                                    <span class="text-gray-400 line-through text-sm">${{ number_format($product->old_price, 2) }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <p class="col-span-full text-center text-gray-400 italic">No best selling products to show.</p>
+            @endif
+        </div>
+    </section>
+
+    <!-- Banner Section -->
+    <section class="mb-20">
+        <div class="w-full h-[500px] md:h-[400px] mt-10 overflow-hidden rounded-md relative bg-gray-200">
+            <img src="{{ asset('images/banner1.jpg.png') }}"
+                 alt="Promo Banner"
+                 class="w-full h-full object-cover shadow-lg"
+                 onerror="this.onerror=null; this.src='https://placehold.co/1200x400?text=Banner+Not+Found';">
+        </div>
+    </section>
+</div>
+@endsection
