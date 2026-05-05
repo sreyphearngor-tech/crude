@@ -26,17 +26,20 @@ class CartController extends AuthController
      */
     public function addToCart(Request $request)
     {
-        // ទទួលយក ID ពី input 'id' ដែលផ្ញើមកពី Form
         $id = $request->id;
         $product = Product::findOrFail($id);
-
         $cart = session()->get('cart', []);
 
-        // ប្រសិនបើមានទំនិញនេះក្នុងកន្ត្រករួចហើយ បូកបន្ថែមចំនួន (Quantity)
+        $currentQtyInCart = isset($cart[$id]) ? $cart[$id]['quantity'] : 0;
+
+        // ឆែកថាតើក្នុងស្តុកនៅសល់គ្រប់គ្រាន់ឬអត់
+        if ($product->qty <= $currentQtyInCart) {
+            return redirect()->back()->with('error', 'សោកស្តាយ! ទំនិញនេះអស់ពីស្តុកហើយ។');
+        }
+
         if(isset($cart[$id])) {
             $cart[$id]['quantity']++;
         } else {
-            // ប្រសិនបើមិនទាន់មាន បង្កើត Item ថ្មីក្នុង Session
             $cart[$id] = [
                 "name" => $product->name,
                 "quantity" => 1,
@@ -50,23 +53,74 @@ class CartController extends AuthController
     }
 
     /**
-     * កែសម្រួលចំនួនទំនិញក្នុងកន្ត្រក (AJAX ឬ Form)
+     * ធ្វើបច្ចុប្បន្នភាពចំនួនទំនិញក្នុងកន្ត្រក (AJAX)
      */
-    public function update(Request $request)
-    {
-        if($request->id && $request->quantity) {
-            $cart = session()->get('cart');
+ // នៅក្នុង CartController.php// ក្នុង CartController.php
 
-            if(isset($cart[$request->id])) {
-                $cart[$request->id]["quantity"] = $request->quantity;
-                session()->put('cart', $cart);
-                return response()->json(['success' => true]);
-            }
+public function update(Request $request)
+{
+    // បន្ថែមការ Validate quantity ឱ្យធំជាង ឬស្មើ ១
+    if($request->id && $request->quantity && $request->quantity >= 1) {
+        $cart = session()->get('cart');
+
+        if(isset($cart[$request->id])) {
+            $cart[$request->id]["quantity"] = $request->quantity;
+            session()->put('cart', $cart);
+
+            $rowSubtotal = $cart[$request->id]['price'] * $request->quantity;
+            $total = $this->calculateTotal($cart); // ប្រើ function ដែលមានស្រាប់
+
+            return response()->json([
+                'success' => true,
+                'rowSubtotal' => number_format($rowSubtotal, 2),
+                'newTotal' => number_format($total, 2)
+            ]);
         }
+    }
+    return response()->json(['success' => false], 400);
+}
 
-        return response()->json(['success' => false], 400);
+public function checkout(Request $request)
+{
+    $cart = session()->get('cart');
+    if (!$cart) {
+        return redirect()->back()->with('error', 'កន្ត្រកទំនិញរបស់អ្នកនៅទទេ!');
     }
 
+    return DB::transaction(function () use ($cart) { // ប្រើ syntax ខ្លីជាង
+        try {
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'total_amount' => $this->calculateTotal($cart),
+                'status' => 'pending',
+            ]);
+
+            foreach ($cart as $id => $details) {
+                // ប្រើ lockForUpdate ដើម្បីការពារការកាត់ស្តុកជាន់គ្នា
+                $product = Product::where('id', $id)->lockForUpdate()->first();
+
+                if (!$product || $product->qty < $details['quantity']) {
+                    throw new \Exception("ផលិតផល " . ($product->name ?? 'មិនស្គាល់') . " មិនគ្រប់គ្រាន់ក្នុងស្តុកទេ!");
+                }
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $id,
+                    'quantity' => $details['quantity'],
+                    'price' => $details['price'],
+                ]);
+
+                $product->decrement('qty', $details['quantity']);
+            }
+
+            session()->forget('cart');
+            return redirect()->route('home')->with('checkout_success', 'ការបញ្ជាទិញជោគជ័យ!');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'មានបញ្ហា៖ ' . $e->getMessage());
+        }
+    });
+}
     /**
      * លុបទំនិញចេញពីកន្ត្រក
      */
@@ -85,65 +139,16 @@ class CartController extends AuthController
     /**
      * ដំណើរការការបញ្ជាទិញ (Checkout)
      */
-    public function checkout(Request $request)
-    {
-        $cart = session()->get('cart');
-
-        if (!$cart) {
-            return redirect()->back()->with('error', 'កន្ត្រកទំនិញរបស់អ្នកនៅទទេ!');
-        }
-
-        // ប្រើ Transaction ដើម្បីធានាថាទិន្នន័យចូលទាំង Order និង OrderItem
-        DB::beginTransaction();
-        try {
-            // ១. បង្កើតទិន្នន័យ Order
-            $order = Order::create([
-                'user_id' => Auth::id(),
-                'total_amount' => $this->calculateTotal($cart),
-                'status' => 'pending',
-            ]);
-
-            // ២. បញ្ចូលទំនិញនីមួយៗទៅក្នុង OrderItem និងកាត់ស្តុក
-            foreach ($cart as $id => $details) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $id,
-                    'quantity' => $details['quantity'],
-                    'price' => $details['price'],
-                ]);
-
-                // កាត់ស្តុកផលិតផល
-                $product = Product::find($id);
-                if ($product) {
-                    if($product->qty < $details['quantity']) {
-                        throw new \Exception("ផលិតផល {$product->name} មិនគ្រប់គ្រាន់ក្នុងស្តុកទេ!");
-                    }
-                    $product->decrement('qty', $details['quantity']);
-                }
-            }
-
-            DB::commit();
-
-            // លុប Cart ចេញពី Session ក្រោយទិញរួច
-            session()->forget('cart');
-
-            return redirect()->route('home')->with('success', 'ការបញ្ជាទិញរបស់អ្នកត្រូវបានទទួលយក!');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'មានបញ្ហា៖ ' . $e->getMessage());
-        }
-    }
 
     /**
      * មុខងារជំនួយសម្រាប់គណនាតម្លៃសរុប
      */
-    private function calculateTotal($cart)
-    {
-        $total = 0;
-        foreach($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
-        return $total;
+private function calculateTotal($cart)
+{
+    $total = 0;
+    foreach($cart as $item) {
+        $total += $item['price'] * $item['quantity'];
     }
+    return $total;
+}
 }
