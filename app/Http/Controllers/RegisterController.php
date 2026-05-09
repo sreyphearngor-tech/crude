@@ -88,5 +88,28 @@ public function profile()
         $user = Auth::user();
         return view('profile', compact('user'));
     }
+public function update(Request $request) {
+    $request->validate([
+        'current_password' => 'required',
+        'new_password' => 'required|min:8|confirmed',
+    ]);
+
+    /** @var \App\Models\User $user */
+    $user = auth()->user();
+
+    if (!Hash::check($request->current_password, $user->password)) {
+        return back()->withErrors(['current_password' => 'The provided password does not match our records.']);
+    }
+
+    $user->update([
+        'password' => Hash::make($request->new_password)
+    ]);
+
+    return back()->with('status', 'Password changed successfully!');
+}
+public function showChangePasswordForm()
+{
+    return view('auth.change-password');
+}
 
 }

@@ -49,6 +49,7 @@ class ProductController extends AuthController
             'price'       => 'required|numeric|min:0',
             'qty'         => 'required|integer|min:0',
             'description' => 'nullable|string',
+            'size'        => 'nullable|string',
             'image'       => 'nullable|image|max:2048',
             'image2'      => 'nullable|image|max:2048',
             'image3'      => 'nullable|image|max:2048',
@@ -143,26 +144,37 @@ public function update(Request $request, $id)
         'price'       => 'required|numeric|min:0',
         'qty'         => 'required|integer|min:0',
         'description' => 'nullable|string',
+        'size'        => 'nullable|string',
         'image'       => 'nullable|image|max:2048',
         'image2'      => 'nullable|image|max:2048',
         'image3'      => 'nullable|image|max:2048',
         'image4'      => 'nullable|image|max:2048',
     ]);
 
-    // កូដសម្រាប់ Update រូបភាព (បើមាន Upload ថ្មី មកជំនួសអាចាស់)
+    // បង្កើត Array សម្រាប់រក្សាទុកទិន្នន័យដែលត្រូវ Update
+    // យើងដក Files ចេញពី $validated សិន ដើម្បីកុំឱ្យវាជាន់គ្នាពេល Update
+    $updateData = $validated;
+
+    // ចាត់ចែងការ Update រូបភាព
     foreach (['image', 'image2', 'image3', 'image4'] as $field) {
         if ($request->hasFile($field)) {
-            // លុបរូបចាស់ចោលដើម្បីកុំឱ្យធ្ងន់ Server (Optional)
-            if ($product->$field) {
+            // ១. លុបរូបចាស់ចេញពី Storage បើមានរូបថ្មីមកជំនួស
+            if ($product->$field && Storage::disk('public')->exists($product->$field)) {
                 Storage::disk('public')->delete($product->$field);
             }
-            $validated[$field] = $request->file($field)->store('products', 'public');
+
+            // ២. រក្សាទុករូបថ្មី និងដាក់ឈ្មោះផ្លូវ (Path) ចូលក្នុង Array
+            $updateData[$field] = $request->file($field)->store('products', 'public');
+        } else {
+            // បើគ្មានការ Upload រូបថ្មីទេ ត្រូវរក្សារូបចាស់ដដែល (កុំឱ្យវាបាត់)
+            $updateData[$field] = $product->$field;
         }
     }
 
-    $product->update($validated);
+    // Update ទៅក្នុង Database តែម្តង
+    $product->update($updateData);
 
-    return redirect()->route('admin.product.index')->with('success', 'Product updated successfully!');
+    return redirect()->route('admin.product.index')->with('success', 'កែប្រែផលិតផលបានជោគជ័យ!');
 }
 
 // 3. Method សម្រាប់លុបផលិតផល (Destroy)

@@ -24,34 +24,51 @@ class CartController extends AuthController
     /**
      * បន្ថែមទំនិញទៅក្នុងកន្ត្រក (Session)
      */
-    public function addToCart(Request $request)
-    {
-        $id = $request->id;
-        $product = Product::findOrFail($id);
-        $cart = session()->get('cart', []);
+ public function addToCart(Request $request)
+{
+    // ១. Validation: ធានាថាមាន ID និង Size (បើផលិតផលតម្រូវឱ្យមាន size)
+    $request->validate([
+        'id' => 'required|exists:products,id',
+        'size' => 'nullable|string'
+    ]);
 
-        $currentQtyInCart = isset($cart[$id]) ? $cart[$id]['quantity'] : 0;
+    $id = $request->id;
+    $size = $request->size;
+    $product = Product::findOrFail($id);
 
-        // ឆែកថាតើក្នុងស្តុកនៅសល់គ្រប់គ្រាន់ឬអត់
-        if ($product->qty <= $currentQtyInCart) {
-            return redirect()->back()->with('error', 'សោកស្តាយ! ទំនិញនេះអស់ពីស្តុកហើយ។');
-        }
+    // ២. បង្កើត Unique Key (ឧទាហរណ៍: "1-M" ឬ "1-XL")
+    // បើគ្មាន size ទេ key គឺនៅតែ "1" ដដែល
+    $cartKey = $id . ($size ? '-' . $size : '');
 
-        if(isset($cart[$id])) {
-            $cart[$id]['quantity']++;
-        } else {
-            $cart[$id] = [
-                "name" => $product->name,
-                "quantity" => 1,
-                "price" => $product->price,
-                "image" => $product->image
-            ];
-        }
+    $cart = session()->get('cart', []);
 
-        session()->put('cart', $cart);
-        return redirect()->back()->with('success', 'បានបន្ថែមទៅក្នុងកន្ត្រកជោគជ័យ!');
+    // ៣. ឆែកចំនួនដែលមានក្នុង Cart រួចហើយ
+    $currentQtyInCart = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
+
+    // ៤. ឆែកស្តុកផលិតផលក្នុង Database
+    if ($product->qty <= $currentQtyInCart) {
+        return redirect()->back()->with('error', 'សោកស្តាយ! ទំនិញទំហំ ' . ($size ?? '') . ' នេះអស់ពីស្តុកហើយ។');
     }
 
+    // ៥. បន្ថែម ឬ បង្កើនចំនួន
+    if(isset($cart[$cartKey])) {
+        $cart[$cartKey]['quantity']++;
+    } else {
+        $cart[$cartKey] = [
+            "id"       => $product->id,
+            "name"     => $product->name,
+            "quantity" => 1,
+            "price"    => $product->price,
+            "size"     => $size,
+            "image"    => $product->image
+        ];
+    }
+
+    session()->put('cart', $cart);
+
+    // បញ្ជូនសារទៅកាន់ View
+    return redirect()->back()->with('success', 'បានបន្ថែម ' . $product->name . ' (' . ($size ?? 'Default') . ') ទៅក្នុងកន្ត្រក!');
+}
     /**
      * ធ្វើបច្ចុប្បន្នភាពចំនួនទំនិញក្នុងកន្ត្រក (AJAX)
      */

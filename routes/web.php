@@ -35,6 +35,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'registerForm'])->name('registerForm');
     Route::post('/register', [RegisterController::class, 'register'])->name('register');
 
+
     Route::get('/login', [RegisterController::class, 'loginForm'])->name('loginForm');
     Route::post('/login', [RegisterController::class, 'login'])->name('login');
 });
@@ -45,11 +46,14 @@ Route::middleware('guest')->group(function () {
 | 3. AUTH ROUTES
 |--------------------------------------------------------------------------
 */
-
+Route::get('/change-password', [RegisterController::class, 'showChangePasswordForm'])->name('change-password.form');
+Route::middleware(['auth'])->group(function () {
+    // សម្រាប់តែអ្នក login ហើយទើប update បាន
+    Route::post('/change-password', [RegisterController::class, 'update'])->name('change-password.update');
+});
 Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [RegisterController::class, 'logout'])->name('logout');
-
 
     /*
     |--------------------------------------------------------------------------

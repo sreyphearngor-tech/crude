@@ -9,8 +9,17 @@
     </div>
 
     <!-- ផ្នែក Form ចុះឈ្មោះខាងស្តាំ -->
-    <div class="w-full md:w-1/2 max-w-md mx-auto">
+    <!-- ផ្នែក Form ខាងស្តាំ -->
+    <div class="w-full lg:w-5/12 px-6 sm:px-12 lg:px-24 mt-10 lg:mt-0 relative">
+
+ <!-- Close Icon Button -->
+        <a href="{{ url('/') }}" class="absolute top-0 right-6 lg:right-10 text-red-700 hover:text-black transition-colors" title="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </a>
         <h1 class="text-4xl font-bold mb-4 tracking-wider">Create an account</h1>
+
         <p class="text-gray-600 mb-10">Enter your details below</p>
 
       <form action="{{ route('register') }}" method="POST" class="space-y-8">

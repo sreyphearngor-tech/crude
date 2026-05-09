@@ -19,6 +19,7 @@ class Product extends Model
         'price',
         'qty',
         'description',
+        'size',
         'image',
         'image2',
         'image3',

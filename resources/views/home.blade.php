@@ -52,15 +52,27 @@
             <div class="flex flex-wrap items-end gap-10 md:gap-20">
                 <h2 class="text-3xl md:text-4xl font-bold tracking-wider">Flash Sales</h2>
                 <!-- Countdown Timer -->
-                <div class="flex gap-4 text-center">
-                    <div><p class="text-[10px] font-bold">Days</p><span class="text-2xl md:text-3xl font-black">03</span></div>
-                    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
-                    <div><p class="text-[10px] font-bold">Hours</p><span class="text-2xl md:text-3xl font-black">23</span></div>
-                    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
-                    <div><p class="text-[10px] font-bold">Mins</p><span class="text-2xl md:text-3xl font-black">19</span></div>
-                    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
-                    <div><p class="text-[10px] font-bold">Secs</p><span class="text-2xl md:text-3xl font-black">56</span></div>
-                </div>
+<div class="flex gap-4 text-center">
+    <div>
+        <p class="text-[10px] font-bold">Days</p>
+        <span id="days" class="text-2xl md:text-3xl font-black">00</span>
+    </div>
+    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
+    <div>
+        <p class="text-[10px] font-bold">Hours</p>
+        <span id="hours" class="text-2xl md:text-3xl font-black">00</span>
+    </div>
+    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
+    <div>
+        <p class="text-[10px] font-bold">Mins</p>
+        <span id="mins" class="text-2xl md:text-3xl font-black">00</span>
+    </div>
+    <span class="text-2xl md:text-3xl text-red-400 mt-4">:</span>
+    <div>
+        <p class="text-[10px] font-bold">Secs</p>
+        <span id="secs" class="text-2xl md:text-3xl font-black">00</span>
+    </div>
+</div>
             </div>
             <div class="flex gap-2">
                 <button class="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition">←</button>
@@ -186,6 +198,8 @@
                             <form action="{{ route('cart.store') }}" method="POST" class="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-all">
                                 @csrf
                                 <input type="hidden" name="id" value="{{ $product->id }}">
+                                   <!-- បញ្ជូន Size ដែលបានរើសតាមរយៈ Alpine.js ឬ JavaScript -->
+                                    <input type="hidden" name="size" :value="selectedSize">
                                 <button type="submit" class="w-full bg-black text-white py-2 hover:bg-gray-800 transition">
                                     Add To Cart
                                 </button>
@@ -220,3 +234,33 @@
     </section>
 </div>
 @endsection
+<script>
+  // កំណត់ថ្ងៃទី៩ ខែឧសភា ឆ្នាំ២០២៦ ម៉ោង ២:២៧ រសៀល (14:27)
+  const targetDate = new Date("May 9, 2026 14:27:00").getTime();
+
+  const timer = setInterval(function() {
+    const now = new Date().getTime();
+    const diff = targetDate - now;
+
+    // គណនា ថ្ងៃ ម៉ោង នាទី វិនាទី
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+    // បង្ហាញទៅលើ HTML (ប្រើ padStart ដើម្បីថែមលេខ 0 នៅខាងមុខបើទាបជាង ១០)
+    document.getElementById("days").innerText = d.toString().padStart(2, '0');
+    document.getElementById("hours").innerText = h.toString().padStart(2, '0');
+    document.getElementById("mins").innerText = m.toString().padStart(2, '0');
+    document.getElementById("secs").innerText = s.toString().padStart(2, '0');
+
+    // បើដល់ពេលកំណត់ ឱ្យវាឈប់ដើរ
+    if (diff < 0) {
+      clearInterval(timer);
+      document.getElementById("days").innerText = "00";
+      document.getElementById("hours").innerText = "00";
+      document.getElementById("mins").innerText = "00";
+      document.getElementById("secs").innerText = "00";
+    }
+  }, 1000);
+</script>
