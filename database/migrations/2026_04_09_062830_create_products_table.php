@@ -9,24 +9,26 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-
     public function up(): void
-{
-    Schema::create('products', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->text('description')->nullable();
-    $table->decimal('price', 10, 2);
-    $table->integer('qty')->default(0); // ប្រើ qty តាមការចង់បានរបស់អ្នក
-    $table->string('size')->nullable();
-    $table->string('image2')->nullable();
-    $table->string('image3')->nullable();
-    $table->string('image4')->nullable();
-    $table->foreignId('category_id')->constrained()->onDelete('cascade');
-    $table->timestamps();
-});
-}
+    {
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->decimal('price', 10, 2);
+            $table->integer('qty')->default(0);
+            $table->string('size')->nullable();
 
+            // បន្ថែម Column 'image' នៅត្រង់នេះ
+            $table->string('image')->nullable();
+
+            $table->string('image2')->nullable();
+            $table->string('image3')->nullable();
+            $table->string('image4')->nullable();
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

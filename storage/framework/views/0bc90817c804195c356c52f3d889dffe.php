@@ -1,0 +1,1 @@
+<?php /**PATH D:\wamp64\www\migrate\crude\resources\views/components/footer.blade.php ENDPATH**/ ?>
